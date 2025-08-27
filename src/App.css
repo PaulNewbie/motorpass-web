@@ -340,7 +340,8 @@ body {
   color: white;
 }
 
-/* Loading and Error States */
+/*
+
 .loading-container {
   display: flex;
   flex-direction: column;
@@ -349,6 +350,7 @@ body {
   padding: 60px 20px;
   color: #6c757d;
 }
+
 
 .loading-spinner {
   width: 40px;
@@ -365,6 +367,7 @@ body {
   100% { transform: rotate(360deg); }
 }
 
+*/
 .error-message {
   background: linear-gradient(135deg, #f8d7da, #f5c6cb);
   color: #721c24;

@@ -26,12 +26,6 @@ const Sidebar = ({ activeTable, setActiveTable }) => {
       ]
     },
     { 
-      key: 'time_tracking', 
-      label: 'Time Records', 
-      icon: '⏰',
-      type: 'single'
-    },
-    { 
       key: 'current_status', 
       label: 'Current Status', 
       icon: '📍',
