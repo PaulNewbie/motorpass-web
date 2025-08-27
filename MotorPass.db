@@ -1,0 +1,78 @@
+        # ===== STUDENTS TABLE =====
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS students (
+                student_id TEXT PRIMARY KEY,
+                full_name TEXT NOT NULL,
+                course TEXT NOT NULL,
+                license_number TEXT,
+                license_expiration DATE,
+                plate_number TEXT,
+                fingerprint_slot INTEGER UNIQUE,
+                enrolled_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        
+        # ===== STAFF TABLE =====
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS staff (
+                staff_no TEXT PRIMARY KEY,
+                full_name TEXT NOT NULL,
+                staff_role TEXT NOT NULL,
+                license_number TEXT,
+                license_expiration DATE,
+                plate_number TEXT,
+                fingerprint_slot INTEGER UNIQUE,
+                enrolled_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        
+        # ===== GUESTS TABLE (without last_visit) =====
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS guests (
+                guest_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                full_name TEXT NOT NULL,
+                plate_number TEXT NOT NULL,
+                office_visiting TEXT NOT NULL,
+                created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        
+        # ===== TIME TRACKING TABLE =====
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS time_tracking (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT NOT NULL,
+                user_name TEXT NOT NULL,
+                user_type TEXT NOT NULL CHECK(user_type IN ('STUDENT', 'STAFF', 'GUEST')),
+                action TEXT NOT NULL CHECK(action IN ('IN', 'OUT')),
+                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                date DATE NOT NULL,
+                time TIME NOT NULL
+            )
+        ''')
+        
+        # ===== CURRENT STATUS TABLE =====
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS current_status (
+                user_id TEXT PRIMARY KEY,
+                user_name TEXT NOT NULL,
+                user_type TEXT NOT NULL CHECK(user_type IN ('STUDENT', 'STAFF', 'GUEST')),
+                status TEXT NOT NULL CHECK(status IN ('IN', 'OUT')),
+                last_action_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+
+	 # ===== VIP_RECORDS TABLE =====
+	        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS vip_records (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                plate_number TEXT NOT NULL,
+                purpose TEXT NOT NULL,
+                time_in TIMESTAMP NOT NULL,
+                time_out TIMESTAMP,
+                status TEXT DEFAULT 'IN' CHECK(status IN ('IN', 'OUT'))
+            )
+        ''')
+
