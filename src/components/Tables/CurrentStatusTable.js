@@ -82,9 +82,12 @@ const CurrentStatusTable = () => {
 
   const getUserTypeBadge = (userType) => {
     const type = userType || 'Unknown';
+    const displayType = type === 'GUEST' ? 'VISITOR' : type;
+    const cssClass = type === 'GUEST' ? 'visitor' : type.toLowerCase();
+    
     return (
-      <span className={`user-type-badge ${type.toLowerCase()}-type`}>
-        {type}
+      <span className={`user-type-badge ${cssClass}-type`}>
+        {displayType}
       </span>
     );
   };
@@ -208,7 +211,7 @@ const CurrentStatusTable = () => {
                 <option value="all">All User Types</option>
                 <option value="STUDENT">Students Only</option>
                 <option value="STAFF">Staff Only</option>
-                <option value="GUEST">Guests Only</option>
+                <option value="GUEST">Visitors Only</option>
               </select>
             </div>
             
@@ -236,7 +239,7 @@ const CurrentStatusTable = () => {
             <div style={{ marginTop: '15px', padding: '10px', background: '#d4edda', borderRadius: '4px', fontSize: '0.9rem' }}>
               <strong>Active Filters:</strong>
               {statusFilter !== 'all' && <span style={{ marginLeft: '10px', background: '#28a745', color: 'white', padding: '2px 6px', borderRadius: '3px', fontSize: '0.8rem' }}>Status: {statusFilter === 'IN' ? 'Inside' : 'Outside'}</span>}
-              {userTypeFilter !== 'all' && <span style={{ marginLeft: '10px', background: '#17a2b8', color: 'white', padding: '2px 6px', borderRadius: '3px', fontSize: '0.8rem' }}>Type: {userTypeFilter}</span>}
+              {userTypeFilter !== 'all' && <span style={{ marginLeft: '10px', background: '#17a2b8', color: 'white', padding: '2px 6px', borderRadius: '3px', fontSize: '0.8rem' }}>Type: {userTypeFilter === 'GUEST' ? 'Visitors' : userTypeFilter}</span>}
               {searchTerm && <span style={{ marginLeft: '10px', background: '#ffc107', color: 'black', padding: '2px 6px', borderRadius: '3px', fontSize: '0.8rem' }}>Search: "{searchTerm}"</span>}
             </div>
           )}

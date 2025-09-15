@@ -49,7 +49,8 @@ const TimeReports = () => {
       'Date,Time,User ID,Name,Type,Action',
       ...filteredData.map(record => {
         const date = new Date(record.timestamp);
-        return `${date.toLocaleDateString()},${date.toLocaleTimeString()},${record.user_id},${record.user_name},${record.user_type},${record.action}`;
+        const displayType = record.user_type === 'GUEST' ? 'VISITOR' : record.user_type;
+        return `${date.toLocaleDateString()},${date.toLocaleTimeString()},${record.user_id},${record.user_name},${displayType},${record.action}`;
       })
     ].join('\n');
 
@@ -72,7 +73,7 @@ const TimeReports = () => {
     outRecords: filteredData.filter(r => r.action === 'OUT').length,
     studentRecords: filteredData.filter(r => r.user_type === 'STUDENT').length,
     staffRecords: filteredData.filter(r => r.user_type === 'STAFF').length,
-    guestRecords: filteredData.filter(r => r.user_type === 'GUEST').length,
+    visitorRecords: filteredData.filter(r => r.user_type === 'GUEST').length,
   };
 
   return (
@@ -112,7 +113,7 @@ const TimeReports = () => {
             <option value="all">All Types</option>
             <option value="STUDENT">Students</option>
             <option value="STAFF">Staff</option>
-            <option value="GUEST">Guests</option>
+            <option value="GUEST">Visitors</option>
           </select>
         </div>
         <div>
@@ -172,8 +173,8 @@ const TimeReports = () => {
           <p>Staff</p>
         </div>
         <div className="stat-card">
-          <h3>{stats.guestRecords}</h3>
-          <p>Guests</p>
+          <h3>{stats.visitorRecords}</h3>
+          <p>Visitors</p>
         </div>
       </div>
 
@@ -201,8 +202,8 @@ const TimeReports = () => {
                     <td>{record.user_id}</td>
                     <td>{record.user_name}</td>
                     <td>
-                      <span className={`user-type-badge ${record.user_type.toLowerCase()}-type`}>
-                        {record.user_type}
+                      <span className={`user-type-badge ${(record.user_type === 'GUEST' ? 'visitor' : record.user_type).toLowerCase()}-type`}>
+                        {record.user_type === 'GUEST' ? 'VISITOR' : record.user_type}
                       </span>
                     </td>
                     <td>

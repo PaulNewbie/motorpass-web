@@ -81,7 +81,7 @@ const GuestsTable = () => {
       <div className="table-header">
         <div>
           <h2>
-            Guests ({filteredGuests.length})
+            Visitors ({filteredGuests.length})
             {activeFilterCount > 0 && (
               <span style={{ 
                 fontSize: '0.8rem', 
@@ -95,13 +95,13 @@ const GuestsTable = () => {
               </span>
             )}
           </h2>
-          <p className="table-description">Unique guest entries (latest information shown)</p>
+          <p className="table-description">Unique visitor entries (latest information shown)</p>
           <div className="table-stats">
             <span className="stat-item">
               Total Entries: {guests.length}
             </span>
             <span className="stat-item">
-              Unique Guests: {uniqueGuests.length}
+              Unique Visitors: {uniqueGuests.length}
             </span>
           </div>
         </div>
@@ -162,7 +162,7 @@ const GuestsTable = () => {
           }}>
             <div>
               <label style={{ display: 'block', marginBottom: '5px', fontWeight: '600', color: '#495057' }}>
-                Search Guests
+                Search Visitors
               </label>
               <input
                 type="text"
@@ -193,7 +193,7 @@ const GuestsTable = () => {
         <table className="data-table">
           <thead>
             <tr>
-              <th>Guest ID</th>
+              <th>Visitor ID</th>
               <th>Full Name</th>
               <th>Plate Number</th>
               <th>Office Visiting</th>
@@ -220,7 +220,7 @@ const GuestsTable = () => {
                   {activeFilterCount > 0 ? (
                     <div>
                       <h4>No Results Found</h4>
-                      <p>No guests match your current search criteria.</p>
+                      <p>No visitors match your current search criteria.</p>
                       <button
                         onClick={clearFilters}
                         style={{
@@ -238,8 +238,8 @@ const GuestsTable = () => {
                     </div>
                   ) : (
                     <div>
-                      <h4>No Unique Guests Found</h4>
-                      <p>No unique guest records found in the system.</p>
+                      <h4>No Unique Visitors Found</h4>
+                      <p>No unique visitor records found in the system.</p>
                     </div>
                   )}
                 </td>
@@ -258,7 +258,7 @@ const GuestsTable = () => {
           border: '1px solid #b3d9ff',
           color: '#0056b3'
         }}>
-          <strong>Note:</strong> Showing {filteredGuests.length} unique guests out of {guests.length} total entries. 
+          <strong>Note:</strong> Showing {filteredGuests.length} unique visitors out of {guests.length} total entries. 
           Duplicate names have been filtered to show only the most recent visit information.
         </div>
       )}

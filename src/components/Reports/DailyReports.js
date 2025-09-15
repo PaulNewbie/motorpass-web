@@ -22,8 +22,8 @@ const DailyReports = () => {
       studentsOut: selectedDateRecords.filter(r => r.user_type === 'STUDENT' && r.action === 'OUT').length,
       staffIn: selectedDateRecords.filter(r => r.user_type === 'STAFF' && r.action === 'IN').length,
       staffOut: selectedDateRecords.filter(r => r.user_type === 'STAFF' && r.action === 'OUT').length,
-      guestsIn: selectedDateRecords.filter(r => r.user_type === 'GUEST' && r.action === 'IN').length,
-      guestsOut: selectedDateRecords.filter(r => r.user_type === 'GUEST' && r.action === 'OUT').length,
+      visitorsIn: selectedDateRecords.filter(r => r.user_type === 'GUEST' && r.action === 'IN').length,
+      visitorsOut: selectedDateRecords.filter(r => r.user_type === 'GUEST' && r.action === 'OUT').length,
       currentlyInside: currentStatus.filter(person => person.status === 'IN').length,
       activities: selectedDateRecords
     };
@@ -49,14 +49,14 @@ const DailyReports = () => {
       `Students Out,${reportData.studentsOut}`,
       `Staff In,${reportData.staffIn}`,
       `Staff Out,${reportData.staffOut}`,
-      `Guests In,${reportData.guestsIn}`,
-      `Guests Out,${reportData.guestsOut}`,
+      `Visitors In,${reportData.visitorsIn}`,
+      `Visitors Out,${reportData.visitorsOut}`,
       `Currently Inside,${reportData.currentlyInside}`,
       '',
       'Detailed Activities',
       'Time,User ID,Name,Type,Action',
       ...reportData.activities.map(activity => 
-        `${new Date(activity.timestamp).toLocaleString()},${activity.user_id},${activity.user_name},${activity.user_type},${activity.action}`
+        `${new Date(activity.timestamp).toLocaleString()},${activity.user_id},${activity.user_name},${activity.user_type === 'GUEST' ? 'VISITOR' : activity.user_type},${activity.action}`
       )
     ].join('\n');
 
@@ -109,8 +109,8 @@ const DailyReports = () => {
               <p>Staff Activities</p>
             </div>
             <div className="stat-card">
-              <h3>{reportData.guestsIn + reportData.guestsOut}</h3>
-              <p>Guest Activities</p>
+              <h3>{reportData.visitorsIn + reportData.visitorsOut}</h3>
+              <p>Visitor Activities</p>
             </div>
             <div className="stat-card">
               <h3>{reportData.currentlyInside}</h3>
@@ -137,8 +137,8 @@ const DailyReports = () => {
                     <td>{activity.user_id}</td>
                     <td>{activity.user_name}</td>
                     <td>
-                      <span className={`user-type-badge ${activity.user_type.toLowerCase()}-type`}>
-                        {activity.user_type}
+                      <span className={`user-type-badge ${(activity.user_type === 'GUEST' ? 'visitor' : activity.user_type).toLowerCase()}-type`}>
+                        {activity.user_type === 'GUEST' ? 'VISITOR' : activity.user_type}
                       </span>
                     </td>
                     <td>

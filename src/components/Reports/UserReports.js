@@ -72,7 +72,7 @@ const UserReports = () => {
       allUsers = [...allUsers, ...staffWithActivity];
     }
 
-    if (selectedUserType === 'all' || selectedUserType === 'guests') {
+    if (selectedUserType === 'all' || selectedUserType === 'visitors') {
       const guestsWithActivity = guests.map(guest => {
         const guestId = `GUEST_${guest.plate_number}`;
         const userActivity = timeTracking.filter(record => record.user_id === guestId);
@@ -83,7 +83,7 @@ const UserReports = () => {
         return {
           id: guestId,
           name: guest.full_name,
-          type: 'GUEST',
+          type: 'VISITOR',
           details: guest.office_visiting,
           plateNumber: guest.plate_number,
           totalActivities: userActivity.length,
@@ -161,7 +161,7 @@ const UserReports = () => {
     totalUsers: users.length,
     studentsCount: users.filter(u => u.type === 'STUDENT').length,
     staffCount: users.filter(u => u.type === 'STAFF').length,
-    guestsCount: users.filter(u => u.type === 'GUEST').length,
+    visitorsCount: users.filter(u => u.type === 'VISITOR').length,
     currentlyInside: users.filter(u => u.currentlyInside).length,
     activeToday: users.filter(u => u.timeInToday > 0 || u.timeOutToday > 0).length
   };
@@ -187,7 +187,7 @@ const UserReports = () => {
             <option value="all">All Users</option>
             <option value="students">Students Only</option>
             <option value="staff">Staff Only</option>
-            <option value="guests">Guests Only</option>
+            <option value="visitors">Visitors Only</option>
           </select>
         </div>
         <div>
@@ -230,8 +230,8 @@ const UserReports = () => {
           <p>Staff</p>
         </div>
         <div className="stat-card">
-          <h3>{stats.guestsCount}</h3>
-          <p>Guests</p>
+          <h3>{stats.visitorsCount}</h3>
+          <p>Visitors</p>
         </div>
         <div className="stat-card">
           <h3>{stats.currentlyInside}</h3>

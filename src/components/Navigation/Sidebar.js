@@ -22,7 +22,7 @@ const Sidebar = ({ activeTable, setActiveTable }) => {
       children: [
         { key: 'students', label: 'Students', icon: '👨‍🎓' },
         { key: 'staff', label: 'Staff', icon: '👔' },
-        { key: 'guests', label: 'Guests', icon: '🧑‍💼' }
+        { key: 'guests', label: 'Visitors', icon: '🧑‍💼' } // Changed label only
       ]
     },
     { 

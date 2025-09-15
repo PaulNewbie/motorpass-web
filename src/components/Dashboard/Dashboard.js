@@ -152,7 +152,7 @@ const Dashboard = () => {
           <div className="stat-card secondary">
             <div className="stat-icon">🧑‍💼</div>
             <div className="stat-info">
-              <h3>Total Guests</h3>
+              <h3>Total Visitors</h3>
               <span className="stat-number">{uniqueGuests.length}</span>
             </div>
           </div>
@@ -200,7 +200,7 @@ const Dashboard = () => {
                         <td>{person.full_name || person.user_name || 'Unknown'}</td>
                         <td>
                           <span className={`badge ${(person.user_type || 'default').toLowerCase()}`}>
-                            {person.user_type || 'Unknown'}
+                            {person.user_type === 'GUEST' ? 'VISITOR' : person.user_type || 'Unknown'}
                           </span>
                         </td>
                         <td>{entryTime.toLocaleTimeString()}</td>
