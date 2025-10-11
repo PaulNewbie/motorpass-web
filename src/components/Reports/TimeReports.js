@@ -1,6 +1,8 @@
 import React from 'react';
 import { useRealtimeData } from '../../hooks/useRealtimeData';
 import LoadingSpinner from '../Common/LoadingSpinner';
+import * as XLSX from "xlsx-js-style";
+import { saveAs } from "file-saver";
 
 const TimeReports = () => {
   const [dateFrom, setDateFrom] = React.useState(new Date().toISOString().split('T')[0]);
@@ -42,28 +44,144 @@ const TimeReports = () => {
     }
   }, [applyFilters]);
 
-  const exportTimeReport = () => {
-    const csvContent = [
-      `Time Report - ${dateFrom} to ${dateTo}`,
-      '',
-      'Date,Time,User ID,Name,Type,Action',
-      ...filteredData.map(record => {
-        const date = new Date(record.timestamp);
-        const displayType = record.user_type === 'GUEST' ? 'VISITOR' : record.user_type;
-        return `${date.toLocaleDateString()},${date.toLocaleTimeString()},${record.user_id},${record.user_name},${displayType},${record.action}`;
-      })
-    ].join('\n');
+const exportTimeReportXLSX = (data, dateFrom, dateTo) => {
+  if (!Array.isArray(data) || data.length === 0) {
+    alert("No records available to export.");
+    return;
+  }
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `time_report_${dateFrom}_to_${dateTo}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const worksheetData = [
+    [`Time Report`],
+    [`Date Range: ${dateFrom} → ${dateTo}`],
+    [`Generated On: ${new Date().toLocaleString()}`],
+    [],
+    ["Date", "Time", "User ID", "Name", "Type", "Action"],
+    ...data.map((record) => {
+      const date = new Date(record.timestamp);
+      const displayType = record.user_type === "GUEST" ? "VISITOR" : record.user_type;
+      return [
+        date.toLocaleDateString(),
+        date.toLocaleTimeString(),
+        record.user_id,
+        record.user_name,
+        displayType,
+        record.action,
+      ];
+    }),
+  ];
+
+  const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+
+  worksheet["!cols"] = [
+    { wch: 12 },
+    { wch: 12 },
+    { wch: 15 },
+    { wch: 36 },
+    { wch: 12 },
+    { wch: 10 },
+  ];
+
+  const border = {
+    top: { style: "thin", color: { rgb: "AAAAAA" } },
+    bottom: { style: "thin", color: { rgb: "AAAAAA" } },
+    left: { style: "thin", color: { rgb: "AAAAAA" } },
+    right: { style: "thin", color: { rgb: "AAAAAA" } },
   };
+
+  const titleStyle = {
+    font: { bold: true, sz: 16, color: { rgb: "1F4E78" } },
+    alignment: { horizontal: "center" },
+  };
+
+  const metaStyle = {
+    font: { italic: true, color: { rgb: "555555" } },
+    alignment: { horizontal: "center" },
+  };
+
+  const headerStyle = {
+    font: { bold: true, color: { rgb: "FFFFFF" } },
+    fill: { type: "pattern", patternType: "solid", fgColor: { rgb: "4472C4" } },
+    alignment: { horizontal: "center", vertical: "center" },
+    border,
+  };
+
+  const cellStyle = {
+    border,
+    alignment: { vertical: "center", horizontal: "center" },
+  };
+
+  const altRowStyle = {
+    ...cellStyle,
+    fill: { type: "pattern", patternType: "solid", fgColor: { rgb: "F9FBFD" } },
+  };
+
+const range = XLSX.utils.decode_range(worksheet["!ref"]);
+
+for (let R = range.s.r; R <= range.e.r; R++) {
+  for (let C = range.s.c; C <= range.e.c; C++) {
+    const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+    if (!worksheet[cellRef]) continue;
+
+    // --- Title and metadata rows ---
+    if (R === 0) worksheet[cellRef].s = titleStyle;
+    else if (R === 1 || R === 2) worksheet[cellRef].s = metaStyle;
+    // --- Header row ---
+    else if (R === 4) worksheet[cellRef].s = headerStyle;
+    // --- Data rows ---
+    else {
+      const rowDataIndex = R - 5; // Adjust for header offset
+      const record = filteredData[rowDataIndex];
+
+      // Alternate row styling
+      const baseStyle = R % 2 === 0 ? altRowStyle : cellStyle;
+
+      // Action column coloring (column F = index 5)
+      if (C === 5 && record) {
+        const actionColor =
+          record.action === "IN"
+            ? { rgb: "E2F0D9" } // light green background
+            : record.action === "OUT"
+            ? { rgb: "F8D7DA" } // light red background
+            : null;
+
+        worksheet[cellRef].s = {
+          ...baseStyle,
+          fill: actionColor
+            ? { type: "pattern", patternType: "solid", fgColor: actionColor }
+            : baseStyle.fill,
+          font: {
+            ...baseStyle.font,
+            bold: true,
+            color:
+              record.action === "IN"
+                ? { rgb: "006100" } // dark green text
+                : record.action === "OUT"
+                ? { rgb: "9C0006" } // dark red text
+                : baseStyle.font?.color,
+          },
+        };
+      } else {
+        worksheet[cellRef].s = baseStyle;
+      }
+    }
+  }
+}
+
+
+  worksheet["!merges"] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 5 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 5 } },
+    { s: { r: 2, c: 0 }, e: { r: 2, c: 5 } },
+  ];
+
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Time Report");
+
+  const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+  const blob = new Blob([excelBuffer], { type: "application/octet-stream" });
+  saveAs(blob, `time_report_${dateFrom}_to_${dateTo}.xlsx`);
+};
+
 
   if (loading) return <LoadingSpinner />;
 
@@ -141,7 +259,7 @@ const TimeReports = () => {
         <div>
           <label>&nbsp;</label>
           <button 
-            onClick={exportTimeReport} 
+            onClick={() => exportTimeReportXLSX(filteredData, dateFrom, dateTo)}
             disabled={filteredData.length === 0}
             style={{ width: '100%', padding: '8px', background: '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
           >

@@ -1,6 +1,8 @@
 import React from 'react';
 import { useRealtimeData } from '../../hooks/useRealtimeData';
 import LoadingSpinner from '../Common/LoadingSpinner';
+import * as XLSX from "xlsx-js-style";
+import { saveAs } from "file-saver";
 
 const UserReports = () => {
   const [selectedUserType, setSelectedUserType] = React.useState('all');
@@ -132,27 +134,168 @@ const UserReports = () => {
     return allUsers;
   }, [selectedUserType, searchTerm, sortBy, students, staff, guests, timeTracking, currentStatus]);
 
-  const exportUserReport = () => {
-    const users = getAllUsers();
-    const csvContent = [
-      'User Report',
-      '',
-      'User ID,Name,Type,Details,Plate Number,Total Activities,Currently Inside,Activities Today,Last Activity',
-      ...users.map(user => 
-        `${user.id},${user.name},${user.type},${user.details},${user.plateNumber},${user.totalActivities},${user.currentlyInside ? 'Yes' : 'No'},${user.timeInToday + user.timeOutToday},${user.lastActivity ? new Date(user.lastActivity).toLocaleString() : 'Never'}`
-      )
-    ].join('\n');
+const exportUserReport = () => {
+  const users = getAllUsers();
+  if (!Array.isArray(users) || users.length === 0) {
+    alert("No user data available to export.");
+    return;
+  }
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `user_report_${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const title = [["User Report"]];
+  const meta = [
+    [`Generated on: ${new Date().toLocaleString()}`],
+    [`Total Users: ${users.length}`],
+  ];
+
+  const headers = [
+    [
+      "User ID",
+      "Name",
+      "Type",
+      "Details",
+      "Plate Number",
+      "Currently Inside",
+      "Total Activities",
+      "Today's IN",
+      "Today's OUT",
+      "Last Activity",
+    ],
+  ];
+
+  const data = users.map((user) => [
+    user.id,
+    user.name,
+    user.type,
+    user.details,
+    user.plateNumber,
+    user.currentlyInside ? "Yes" : "No",
+    user.totalActivities,
+    user.timeInToday,
+    user.timeOutToday,
+    user.lastActivity
+      ? new Date(user.lastActivity).toLocaleString()
+      : "Never",
+  ]);
+
+  const worksheet = XLSX.utils.aoa_to_sheet([
+    ...title,
+    [],
+    ...meta,
+    [],
+    ...headers,
+    ...data,
+  ]);
+
+  // === Column widths ===
+  worksheet["!cols"] = [
+    { wch: 20 },
+    { wch: 36 }, // widened Name column
+    { wch: 12 },
+    { wch: 25 },
+    { wch: 16 },
+    { wch: 16 },
+    { wch: 18 },
+    { wch: 12 },
+    { wch: 12 },
+    { wch: 24 },
+  ];
+
+  // === Styling ===
+  const titleStyle = {
+    font: { bold: true, sz: 16, color: { rgb: "1F4E78" } },
+    alignment: { horizontal: "center" },
   };
+
+  const metaStyle = {
+    font: { italic: true, color: { rgb: "555555" } },
+    alignment: { horizontal: "left" },
+  };
+
+  const headerStyle = {
+    font: { bold: true, color: { rgb: "FFFFFF" } },
+    fill: { type: "pattern", patternType: "solid", fgColor: { rgb: "4472C4" } },
+    border: {
+      top: { style: "thin", color: { rgb: "000000" } },
+      bottom: { style: "thin", color: { rgb: "000000" } },
+      left: { style: "thin", color: { rgb: "000000" } },
+      right: { style: "thin", color: { rgb: "000000" } },
+    },
+    alignment: { horizontal: "center", vertical: "center" },
+  };
+
+  const cellStyle = {
+    border: {
+      top: { style: "thin", color: { rgb: "DDDDDD" } },
+      bottom: { style: "thin", color: { rgb: "DDDDDD" } },
+      left: { style: "thin", color: { rgb: "DDDDDD" } },
+      right: { style: "thin", color: { rgb: "DDDDDD" } },
+    },
+    alignment: { horizontal: "center", vertical: "center" },
+  };
+
+  const altRowStyle = {
+    ...cellStyle,
+    fill: { type: "pattern", patternType: "solid", fgColor: { rgb: "F9F9F9" } },
+  };
+
+  // === Apply styling ===
+  const range = XLSX.utils.decode_range(worksheet["!ref"]);
+  for (let R = range.s.r; R <= range.e.r; R++) {
+    for (let C = range.s.c; C <= range.e.c; C++) {
+      const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+      if (!worksheet[cellRef]) continue;
+
+      // Title + Meta + Header styling
+      if (R === 0) worksheet[cellRef].s = titleStyle;
+      else if (R === 2 || R === 3) worksheet[cellRef].s = metaStyle;
+      else if (R === 5) worksheet[cellRef].s = headerStyle;
+      else {
+        // Data rows start from row 6
+        const rowDataIndex = R - 6;
+        const record = users[rowDataIndex];
+        const baseStyle = R % 2 === 0 ? altRowStyle : cellStyle;
+
+        // Color-coded IN/OUT cells
+        if (C === 7 || C === 8) {
+          const isInCol = C === 7;
+          const count = isInCol
+            ? record?.timeInToday
+            : record?.timeOutToday;
+
+          if (count > 0) {
+            worksheet[cellRef].s = {
+              ...baseStyle,
+              fill: {
+                type: "pattern",
+                patternType: "solid",
+                fgColor: {
+                  rgb: isInCol ? "E2F0D9" : "F8D7DA", // green/red bg
+                },
+              },
+              font: {
+                bold: true,
+                color: {
+                  rgb: isInCol ? "006100" : "9C0006", // dark green/red text
+                },
+              },
+            };
+          } else {
+            worksheet[cellRef].s = baseStyle;
+          }
+        } else {
+          worksheet[cellRef].s = baseStyle;
+        }
+      }
+    }
+  }
+
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "User Report");
+  XLSX.writeFile(
+    workbook,
+    `User_Report_${new Date().toISOString().split("T")[0]}.xlsx`
+  );
+};
 
   if (studentsLoading || staffLoading || guestsLoading) return <LoadingSpinner />;
 
