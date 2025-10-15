@@ -42,7 +42,7 @@ const TimeReports = () => {
     if (timeTracking.length > 0) {
       applyFilters();
     }
-  }, [applyFilters]);
+  }, [applyFilters, timeTracking.length]);
 
 const exportTimeReportXLSX = (data, dateFrom, dateTo) => {
   if (!Array.isArray(data) || data.length === 0) {
