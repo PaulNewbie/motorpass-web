@@ -18,4 +18,3 @@ const db = getFirestore(app);
 console.log("✅ Firebase initialized successfully");
 
 export { db };
-export default null;
