@@ -7,7 +7,7 @@ import {
   orderBy
 } from 'firebase/firestore';
 
-// Modular Firestore operations (Firebase v9+)
+// Firestore operations
 const firestoreOperations = {
   subscribe: (collectionName, callback, orderByField = null) => {
     try {
@@ -20,6 +20,7 @@ const firestoreOperations = {
 
       return onSnapshot(q, callback, (error) => {
         console.error(`Error fetching ${collectionName}:`, error);
+        callback({ docs: [] });
       });
     } catch (error) {
       console.error('Firebase operation failed:', error);
