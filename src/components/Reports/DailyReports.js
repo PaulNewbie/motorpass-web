@@ -4,8 +4,6 @@ import LoadingSpinner from '../Common/LoadingSpinner';
 import ErrorMessage from '../Common/ErrorMessage';
 import * as XLSX from 'xlsx-js-style';
 
-import { saveAs } from "file-saver";
-
 const DailyReports = () => {
   const [selectedDate, setSelectedDate] = React.useState(
     new Date().toISOString().split('T')[0]

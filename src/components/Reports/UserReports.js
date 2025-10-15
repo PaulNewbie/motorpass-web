@@ -2,7 +2,6 @@ import React from 'react';
 import { useRealtimeData } from '../../hooks/useRealtimeData';
 import LoadingSpinner from '../Common/LoadingSpinner';
 import * as XLSX from "xlsx-js-style";
-import { saveAs } from "file-saver";
 
 const UserReports = () => {
   const [selectedUserType, setSelectedUserType] = React.useState('all');
