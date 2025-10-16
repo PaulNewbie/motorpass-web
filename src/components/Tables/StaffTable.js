@@ -64,7 +64,7 @@ const StaffTable = () => {
       <div className="table-header">
         <div>
           <h2>
-            Staff ({filteredStaff.length})
+            Staff' s ({filteredStaff.length})
             {activeFilterCount > 0 && (
               <span style={{ 
                 fontSize: '0.8rem', 
@@ -194,7 +194,7 @@ const StaffTable = () => {
           <thead>
             <tr>
               <th>Staff No</th>
-              <th>Full Name</th>
+              <th>Name</th>
               <th>Role</th>
               <th>License Number</th>
               <th>License Expiration</th>

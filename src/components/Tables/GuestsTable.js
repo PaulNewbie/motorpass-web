@@ -80,7 +80,7 @@ const GuestsTable = () => {
     <div className="table-container">
       <div className="table-header">
         <div>
-          <h2>Visitors ({filteredGuests.length})</h2>
+          <h2>Visitor' s ({filteredGuests.length})</h2>
         </div>
         
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
@@ -106,7 +106,7 @@ const GuestsTable = () => {
         <table className="data-table">
           <thead>
             <tr>
-              <th>Full Name</th>
+              <th>Name</th>
               <th>Plate Number</th>
               <th>Office Visiting</th>
               <th>Latest Visit</th>

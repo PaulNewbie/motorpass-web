@@ -64,7 +64,7 @@ const StudentsTable = () => {
       <div className="table-header">
         <div>
           <h2>
-            Students ({filteredStudents.length})
+            Student' s ({filteredStudents.length})
             {activeFilterCount > 0 && (
               <span style={{ 
                 fontSize: '0.8rem', 
@@ -194,7 +194,7 @@ const StudentsTable = () => {
           <thead>
             <tr>
               <th>Student ID</th>
-              <th>Full Name</th>
+              <th>Name</th>
               <th>Course</th>
               <th>License Number</th>
               <th>License Expiration</th>
