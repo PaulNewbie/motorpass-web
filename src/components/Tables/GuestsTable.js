@@ -11,6 +11,7 @@ const GuestsTable = () => {
   // Filter states
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [selectedGuestName, setSelectedGuestName] = useState(null);
 
   // Function to get unique guests (latest entry for each name)
   const getUniqueGuests = useCallback(() => {
@@ -20,26 +21,23 @@ const GuestsTable = () => {
     const guestMap = new Map();
     
     guests.forEach(guest => {
-      const guestName = guest.full_name?.trim().toUpperCase();
+      const guestName = guest.full_name?.replace(/[\s,]/g, '').toUpperCase();
       if (!guestName) return;
       
       const currentDate = new Date(guest.created_date);
       
-      // If we haven't seen this guest name before, or if this entry is more recent
       if (!guestMap.has(guestName)) {
         guestMap.set(guestName, guest);
       } else {
         const existingGuest = guestMap.get(guestName);
         const existingDate = new Date(existingGuest.created_date);
         
-        // Keep the most recent entry
         if (currentDate > existingDate) {
           guestMap.set(guestName, guest);
         }
       }
     });
     
-    // Convert map back to array and sort by most recent created_date
     return Array.from(guestMap.values()).sort((a, b) => 
       new Date(b.created_date) - new Date(a.created_date)
     );
@@ -47,10 +45,8 @@ const GuestsTable = () => {
 
   // Apply filters to unique guests
   const filteredGuests = useMemo(() => {
-    const uniqueGuests = getUniqueGuests();
-    let filtered = [...uniqueGuests];
+    let filtered = getUniqueGuests();
 
-    // Search filter
     if (searchTerm) {
       filtered = filtered.filter(guest => 
         guest.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -61,131 +57,48 @@ const GuestsTable = () => {
 
     return filtered;
   }, [getUniqueGuests, searchTerm]);
-
-  const clearFilters = () => {
-    setSearchTerm('');
+  
+  const handleRowClick = (guestName) => {
+    if (selectedGuestName === guestName) {
+      setSelectedGuestName(null); // Hide if already showing
+    } else {
+      setSelectedGuestName(guestName);
+    }
   };
 
-  const getActiveFilterCount = () => {
-    return searchTerm ? 1 : 0;
+  const getDuplicateEntries = (guestName) => {
+    if (!guestName) return [];
+    return guests.filter(g => g.full_name?.replace(/[\s,]/g, '').toUpperCase() === guestName.replace(/[\s,]/g, '').toUpperCase())
+                 .sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
   };
-
+  
   if (loading) return <LoadingSpinner />;
   if (error) return <ErrorMessage message={error} />;
 
-  const uniqueGuests = getUniqueGuests();
-  const activeFilterCount = getActiveFilterCount();
 
   return (
     <div className="table-container">
       <div className="table-header">
         <div>
-          <h2>
-            Visitors ({filteredGuests.length})
-            {activeFilterCount > 0 && (
-              <span style={{ 
-                fontSize: '0.8rem', 
-                background: '#007bff', 
-                color: 'white', 
-                padding: '2px 8px', 
-                borderRadius: '10px',
-                marginLeft: '10px'
-              }}>
-                {activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''}
-              </span>
-            )}
-          </h2>
-          <p className="table-description">Unique visitor entries (latest information shown)</p>
-          <div className="table-stats">
-            <span className="stat-item">
-              Total Entries: {guests.length}
-            </span>
-            <span className="stat-item">
-              Unique Visitors: {uniqueGuests.length}
-            </span>
-          </div>
+          <h2>Visitors ({filteredGuests.length})</h2>
         </div>
         
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           <button
             onClick={() => setShowFilters(!showFilters)}
-            style={{
-              padding: '8px 16px',
-              background: showFilters ? '#dc3545' : '#007bff',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              fontSize: '0.9rem',
-              fontWeight: '500'
-            }}
+            style={{ padding: '8px 16px', background: showFilters ? '#dc3545' : '#007bff', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem', fontWeight: '500' }}
           >
             {showFilters ? '✕' : '🔍'} {showFilters ? 'Hide' : 'Filter'}
           </button>
-          
-          {activeFilterCount > 0 && (
-            <button
-              onClick={clearFilters}
-              style={{
-                padding: '6px 12px',
-                background: '#6c757d',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '0.8rem'
-              }}
-            >
-              Clear All
-            </button>
-          )}
         </div>
       </div>
 
-      {/* Integrated Filter Panel */}
       {showFilters && (
-        <div style={{
-          background: '#f8f9fa',
-          padding: '20px',
-          borderRadius: '8px',
-          marginBottom: '20px',
-          border: '1px solid #e9ecef'
-        }}>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-            gap: '15px',
-            alignItems: 'end'
-          }}>
-            <div>
-              <label style={{ display: 'block', marginBottom: '5px', fontWeight: '600', color: '#495057' }}>
-                Search Visitors
-              </label>
-              <input
-                type="text"
-                placeholder="Search by name, plate number, or office..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '8px',
-                  border: '1px solid #ced4da',
-                  borderRadius: '4px',
-                  fontSize: '0.9rem'
-                }}
-              />
-            </div>
+        <div style={{ background: '#f8f9fa', padding: '20px', borderRadius: '8px', marginBottom: '20px', border: '1px solid #e9ecef' }}>
+          <div>
+            <label style={{ display: 'block', marginBottom: '5px', fontWeight: '600', color: '#495057' }}>Search Visitors</label>
+            <input type="text" placeholder="Search by name, plate number, or office..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #ced4da', borderRadius: '4px', fontSize: '0.9rem' }} />
           </div>
-          
-          {activeFilterCount > 0 && (
-            <div style={{ marginTop: '15px', padding: '10px', background: '#d4edda', borderRadius: '4px', fontSize: '0.9rem' }}>
-              <strong>Active Filters:</strong>
-              {searchTerm && <span style={{ marginLeft: '10px', background: '#ffc107', color: 'black', padding: '2px 6px', borderRadius: '3px', fontSize: '0.8rem' }}>Search: "{searchTerm}"</span>}
-            </div>
-          )}
         </div>
       )}
 
@@ -193,7 +106,6 @@ const GuestsTable = () => {
         <table className="data-table">
           <thead>
             <tr>
-              <th>Visitor ID</th>
               <th>Full Name</th>
               <th>Plate Number</th>
               <th>Office Visiting</th>
@@ -202,66 +114,53 @@ const GuestsTable = () => {
           </thead>
           <tbody>
             {filteredGuests.map((guest) => (
-              <tr key={guest.guest_id || guest.id}>
-                <td>{guest.guest_id || guest.id}</td>
-                <td>
-                  <span style={{ fontWeight: '600' }}>{guest.full_name}</span>
-                </td>
-                <td>
-                  <span className="plate-number">{guest.plate_number}</span>
-                </td>
-                <td>{guest.office_visiting}</td>
-                <td>{formatDate(guest.created_date)}</td>
-              </tr>
+              <React.Fragment key={guest.guest_id || guest.id}>
+                <tr onClick={() => handleRowClick(guest.full_name)} style={{ cursor: 'pointer' }}>
+                  <td><span style={{ fontWeight: '600' }}>{guest.full_name}</span></td>
+                  <td><span className="plate-number">{guest.plate_number}</span></td>
+                  <td>{guest.office_visiting}</td>
+                  <td>{formatDate(guest.created_date)}</td>
+                </tr>
+                {selectedGuestName === guest.full_name && (
+                  <tr>
+                    <td colSpan="4" style={{ padding: '0', background: '#f8f9fa' }}>
+                      <div style={{ padding: '20px' }}>
+                        <h4 style={{ marginBottom: '10px' }}>All Entries for {guest.full_name}</h4>
+                        <table className="data-table" style={{ background: 'white' }}>
+                          <thead>
+                            <tr>
+                              <th>Plate Number</th>
+                              <th>Office Visiting</th>
+                              <th>Visit Date</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {getDuplicateEntries(guest.full_name).map(entry => (
+                              <tr key={entry.id}>
+                                <td><span className="plate-number">{entry.plate_number}</span></td>
+                                <td>{entry.office_visiting}</td>
+                                <td>{formatDate(entry.created_date)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </React.Fragment>
             ))}
             {filteredGuests.length === 0 && (
               <tr>
-                <td colSpan="5" style={{ textAlign: 'center', padding: '40px' }}>
-                  {activeFilterCount > 0 ? (
-                    <div>
-                      <h4>No Results Found</h4>
-                      <p>No visitors match your current search criteria.</p>
-                      <button
-                        onClick={clearFilters}
-                        style={{
-                          padding: '8px 16px',
-                          background: '#007bff',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '4px',
-                          cursor: 'pointer',
-                          marginTop: '10px'
-                        }}
-                      >
-                        Clear Filters
-                      </button>
-                    </div>
-                  ) : (
-                    <div>
-                      <h4>No Unique Visitors Found</h4>
-                      <p>No unique visitor records found in the system.</p>
-                    </div>
-                  )}
+                <td colSpan="4" style={{ textAlign: 'center', padding: '40px' }}>
+                  <h4>No Visitors Found</h4>
+                  <p>No visitor records match your current filters.</p>
                 </td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
-      
-      {guests.length !== uniqueGuests.length && (
-        <div style={{ 
-          padding: '15px', 
-          background: '#e7f3ff', 
-          borderRadius: '8px', 
-          marginTop: '15px',
-          border: '1px solid #b3d9ff',
-          color: '#0056b3'
-        }}>
-          <strong>Note:</strong> Showing {filteredGuests.length} unique visitors out of {guests.length} total entries. 
-          Duplicate names have been filtered to show only the most recent visit information.
-        </div>
-      )}
     </div>
   );
 };

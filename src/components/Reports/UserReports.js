@@ -7,6 +7,7 @@ const UserReports = () => {
   const [selectedUserType, setSelectedUserType] = React.useState('all');
   const [searchTerm, setSearchTerm] = React.useState('');
   const [sortBy, setSortBy] = React.useState('name');
+  const [sortDirection, setSortDirection] = React.useState('asc');
 
   const { data: students, loading: studentsLoading } = useRealtimeData('students');
   const { data: staff, loading: staffLoading } = useRealtimeData('staff');
@@ -111,194 +112,149 @@ const UserReports = () => {
       );
     }
 
-    // Apply sorting
-    allUsers.sort((a, b) => {
-      switch (sortBy) {
-        case 'name':
-          return a.name.localeCompare(b.name);
-        case 'type':
-          return a.type.localeCompare(b.type);
-        case 'activities':
-          return b.totalActivities - a.totalActivities;
-        case 'lastActivity':
-          if (!a.lastActivity && !b.lastActivity) return 0;
-          if (!a.lastActivity) return 1;
-          if (!b.lastActivity) return -1;
-          return new Date(b.lastActivity) - new Date(a.lastActivity);
-        default:
-          return 0;
-      }
-    });
-
     return allUsers;
-  }, [selectedUserType, searchTerm, sortBy, students, staff, guests, timeTracking, currentStatus]);
+  }, [selectedUserType, searchTerm, students, staff, guests, timeTracking, currentStatus]);
 
-const exportUserReport = () => {
-  const users = getAllUsers();
-  if (!Array.isArray(users) || users.length === 0) {
-    alert("No user data available to export.");
-    return;
-  }
+  const sortedUsers = React.useMemo(() => {
+    const users = getAllUsers();
+    return [...users].sort((a, b) => {
+      const aValue = a[sortBy];
+      const bValue = b[sortBy];
 
-  const title = [["User Report"]];
-  const meta = [
-    [`Generated on: ${new Date().toLocaleString()}`],
-    [`Total Users: ${users.length}`],
-  ];
+      if (sortBy === 'lastActivity') {
+        const aTime = aValue ? new Date(aValue) : new Date(0);
+        const bTime = bValue ? new Date(bValue) : new Date(0);
+        return sortDirection === 'asc' ? aTime - bTime : bTime - aTime;
+      }
+      
+      if (typeof aValue === 'number' && typeof bValue === 'number') {
+        return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
+      }
 
-  const headers = [
-    [
-      "User ID",
-      "Name",
-      "Type",
-      "Details",
-      "Plate Number",
-      "Currently Inside",
-      "Total Activities",
-      "Today's IN",
-      "Today's OUT",
-      "Last Activity",
-    ],
-  ];
+      const aStr = String(aValue).toLowerCase();
+      const bStr = String(bValue).toLowerCase();
+      return sortDirection === 'asc' ? aStr.localeCompare(bStr) : bStr.localeCompare(aStr);
+    });
+  }, [getAllUsers, sortBy, sortDirection]);
 
-  const data = users.map((user) => [
-    user.id,
-    user.name,
-    user.type,
-    user.details,
-    user.plateNumber,
-    user.currentlyInside ? "Yes" : "No",
-    user.totalActivities,
-    user.timeInToday,
-    user.timeOutToday,
-    user.lastActivity
-      ? new Date(user.lastActivity).toLocaleString()
-      : "Never",
-  ]);
-
-  const worksheet = XLSX.utils.aoa_to_sheet([
-    ...title,
-    [],
-    ...meta,
-    [],
-    ...headers,
-    ...data,
-  ]);
-
-  // === Column widths ===
-  worksheet["!cols"] = [
-    { wch: 20 },
-    { wch: 36 }, // widened Name column
-    { wch: 12 },
-    { wch: 25 },
-    { wch: 16 },
-    { wch: 16 },
-    { wch: 18 },
-    { wch: 12 },
-    { wch: 12 },
-    { wch: 24 },
-  ];
-
-  // === Styling ===
-  const titleStyle = {
-    font: { bold: true, sz: 16, color: { rgb: "1F4E78" } },
-    alignment: { horizontal: "center" },
+  const handleSort = (column) => {
+    if (sortBy === column) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(column);
+      setSortDirection('asc');
+    }
   };
 
-  const metaStyle = {
-    font: { italic: true, color: { rgb: "555555" } },
-    alignment: { horizontal: "left" },
+  const getSortIcon = (column) => {
+    if (sortBy !== column) return ' ↕';
+    if (sortDirection === 'asc') return ' ▲';
+    return ' ▼';
   };
 
-  const headerStyle = {
-    font: { bold: true, color: { rgb: "FFFFFF" } },
-    fill: { type: "pattern", patternType: "solid", fgColor: { rgb: "4472C4" } },
-    border: {
-      top: { style: "thin", color: { rgb: "000000" } },
-      bottom: { style: "thin", color: { rgb: "000000" } },
-      left: { style: "thin", color: { rgb: "000000" } },
-      right: { style: "thin", color: { rgb: "000000" } },
-    },
-    alignment: { horizontal: "center", vertical: "center" },
-  };
+  const exportUserReport = () => {
+    const users = sortedUsers;
+    if (!Array.isArray(users) || users.length === 0) {
+      alert("No user data available to export.");
+      return;
+    }
 
-  const cellStyle = {
-    border: {
-      top: { style: "thin", color: { rgb: "DDDDDD" } },
-      bottom: { style: "thin", color: { rgb: "DDDDDD" } },
-      left: { style: "thin", color: { rgb: "DDDDDD" } },
-      right: { style: "thin", color: { rgb: "DDDDDD" } },
-    },
-    alignment: { horizontal: "center", vertical: "center" },
-  };
+    const title = [["User Report"]];
+    const meta = [
+      [`Generated on: ${new Date().toLocaleString()}`],
+      [`Total Users: ${users.length}`],
+    ];
 
-  const altRowStyle = {
-    ...cellStyle,
-    fill: { type: "pattern", patternType: "solid", fgColor: { rgb: "F9F9F9" } },
-  };
+    const headers = [
+      [
+        "User ID",
+        "Name",
+        "Type",
+        "Details",
+        "Plate Number",
+        "Currently Inside",
+        "Total Activities",
+        "Today's IN",
+        "Today's OUT",
+        "Last Activity",
+      ],
+    ];
 
-  // === Apply styling ===
-  const range = XLSX.utils.decode_range(worksheet["!ref"]);
-  for (let R = range.s.r; R <= range.e.r; R++) {
-    for (let C = range.s.c; C <= range.e.c; C++) {
-      const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
-      if (!worksheet[cellRef]) continue;
+    const data = users.map((user) => [
+      user.id,
+      user.name,
+      user.type,
+      user.details,
+      user.plateNumber,
+      user.currentlyInside ? "Yes" : "No",
+      user.totalActivities,
+      user.timeInToday,
+      user.timeOutToday,
+      user.lastActivity
+        ? new Date(user.lastActivity).toLocaleString()
+        : "Never",
+    ]);
 
-      // Title + Meta + Header styling
-      if (R === 0) worksheet[cellRef].s = titleStyle;
-      else if (R === 2 || R === 3) worksheet[cellRef].s = metaStyle;
-      else if (R === 5) worksheet[cellRef].s = headerStyle;
-      else {
-        // Data rows start from row 6
-        const rowDataIndex = R - 6;
-        const record = users[rowDataIndex];
-        const baseStyle = R % 2 === 0 ? altRowStyle : cellStyle;
+    const worksheet = XLSX.utils.aoa_to_sheet([
+      ...title,
+      [],
+      ...meta,
+      [],
+      ...headers,
+      ...data,
+    ]);
 
-        // Color-coded IN/OUT cells
-        if (C === 7 || C === 8) {
-          const isInCol = C === 7;
-          const count = isInCol
-            ? record?.timeInToday
-            : record?.timeOutToday;
+    // === Column widths ===
+    worksheet["!cols"] = [
+      { wch: 20 }, { wch: 36 }, { wch: 12 }, { wch: 25 }, { wch: 16 },
+      { wch: 16 }, { wch: 18 }, { wch: 12 }, { wch: 12 }, { wch: 24 },
+    ];
 
-          if (count > 0) {
-            worksheet[cellRef].s = {
-              ...baseStyle,
-              fill: {
-                type: "pattern",
-                patternType: "solid",
-                fgColor: {
-                  rgb: isInCol ? "E2F0D9" : "F8D7DA", // green/red bg
-                },
-              },
-              font: {
-                bold: true,
-                color: {
-                  rgb: isInCol ? "006100" : "9C0006", // dark green/red text
-                },
-              },
-            };
+    // === Styling ===
+    const titleStyle = { font: { bold: true, sz: 16, color: { rgb: "1F4E78" } }, alignment: { horizontal: "center" } };
+    const metaStyle = { font: { italic: true, color: { rgb: "555555" } }, alignment: { horizontal: "left" } };
+    const headerStyle = { font: { bold: true, color: { rgb: "FFFFFF" } }, fill: { type: "pattern", patternType: "solid", fgColor: { rgb: "4472C4" } }, border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } }, alignment: { horizontal: "center", vertical: "center" } };
+    const cellStyle = { border: { top: { style: "thin", color: { rgb: "DDDDDD" } }, bottom: { style: "thin", color: { rgb: "DDDDDD" } }, left: { style: "thin", color: { rgb: "DDDDDD" } }, right: { style: "thin", color: { rgb: "DDDDDD" } } }, alignment: { horizontal: "center", vertical: "center" } };
+    const altRowStyle = { ...cellStyle, fill: { type: "pattern", patternType: "solid", fgColor: { rgb: "F9F9F9" } } };
+
+    // === Apply styling ===
+    const range = XLSX.utils.decode_range(worksheet["!ref"]);
+    for (let R = range.s.r; R <= range.e.r; R++) {
+      for (let C = range.s.c; C <= range.e.c; C++) {
+        const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+        if (!worksheet[cellRef]) continue;
+
+        if (R === 0) worksheet[cellRef].s = titleStyle;
+        else if (R === 2 || R === 3) worksheet[cellRef].s = metaStyle;
+        else if (R === 5) worksheet[cellRef].s = headerStyle;
+        else {
+          const rowDataIndex = R - 6;
+          const record = users[rowDataIndex];
+          const baseStyle = R % 2 === 0 ? altRowStyle : cellStyle;
+
+          if ((C === 7 || C === 8) && record) {
+            const isInCol = C === 7;
+            const count = isInCol ? record.timeInToday : record.timeOutToday;
+            if (count > 0) {
+              worksheet[cellRef].s = { ...baseStyle, fill: { type: "pattern", patternType: "solid", fgColor: { rgb: isInCol ? "E2F0D9" : "F8D7DA" } }, font: { bold: true, color: { rgb: isInCol ? "006100" : "9C0006" } } };
+            } else {
+              worksheet[cellRef].s = baseStyle;
+            }
           } else {
             worksheet[cellRef].s = baseStyle;
           }
-        } else {
-          worksheet[cellRef].s = baseStyle;
         }
       }
     }
-  }
 
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "User Report");
-  XLSX.writeFile(
-    workbook,
-    `User_Report_${new Date().toISOString().split("T")[0]}.xlsx`
-  );
-};
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "User Report");
+    XLSX.writeFile(workbook, `User_Report_${new Date().toISOString().split("T")[0]}.xlsx`);
+  };
 
   if (studentsLoading || staffLoading || guestsLoading) return <LoadingSpinner />;
 
-  const users = getAllUsers();
+  const users = sortedUsers;
   const stats = {
     totalUsers: users.length,
     studentsCount: users.filter(u => u.type === 'STUDENT').length,
@@ -321,11 +277,7 @@ const exportUserReport = () => {
       <div style={{ background: 'white', padding: '20px', borderRadius: '8px', marginBottom: '20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '15px' }}>
         <div>
           <label>User Type</label>
-          <select
-            value={selectedUserType}
-            onChange={(e) => setSelectedUserType(e.target.value)}
-            style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
-          >
+          <select value={selectedUserType} onChange={(e) => setSelectedUserType(e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}>
             <option value="all">All Users</option>
             <option value="students">Students Only</option>
             <option value="staff">Staff Only</option>
@@ -334,54 +286,38 @@ const exportUserReport = () => {
         </div>
         <div>
           <label>Sort By</label>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
-          >
+          <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}>
             <option value="name">Name</option>
             <option value="type">Type</option>
-            <option value="activities">Total Activities</option>
+            <option value="totalActivities">Total Activities</option>
             <option value="lastActivity">Last Activity</option>
           </select>
         </div>
         <div>
           <label>Search</label>
-          <input
-            type="text"
-            placeholder="Search users..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
-          />
+          <input type="text" placeholder="Search users..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }} />
         </div>
       </div>
 
       {/* Statistics */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '15px', marginBottom: '20px' }}>
-        <div className="stat-card">
-          <h3>{stats.totalUsers}</h3>
-          <p>Total Users</p>
+        <div className="stat-card" style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center' }}>
+          <h3 style={{ marginRight: '8px' }}>{stats.totalUsers}</h3><p>Total Users</p>
         </div>
-        <div className="stat-card">
-          <h3>{stats.studentsCount}</h3>
-          <p>Students</p>
+        <div className="stat-card" style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center' }}>
+          <h3 style={{ marginRight: '8px' }}>{stats.studentsCount}</h3><p>Students</p>
         </div>
-        <div className="stat-card">
-          <h3>{stats.staffCount}</h3>
-          <p>Staff</p>
+        <div className="stat-card" style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center' }}>
+          <h3 style={{ marginRight: '8px' }}>{stats.staffCount}</h3><p>Staff</p>
         </div>
-        <div className="stat-card">
-          <h3>{stats.visitorsCount}</h3>
-          <p>Visitors</p>
+        <div className="stat-card" style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center' }}>
+          <h3 style={{ marginRight: '8px' }}>{stats.visitorsCount}</h3><p>Visitors</p>
         </div>
-        <div className="stat-card">
-          <h3>{stats.currentlyInside}</h3>
-          <p>Currently Inside</p>
+        <div className="stat-card" style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center' }}>
+          <h3 style={{ marginRight: '8px' }}>{stats.currentlyInside}</h3><p>Currently Inside</p>
         </div>
-        <div className="stat-card">
-          <h3>{stats.activeToday}</h3>
-          <p>Active Today</p>
+        <div className="stat-card" style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center' }}>
+          <h3 style={{ marginRight: '8px' }}>{stats.activeToday}</h3><p>Active Today</p>
         </div>
       </div>
 
@@ -393,14 +329,14 @@ const exportUserReport = () => {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>User ID</th>
-                  <th>Name</th>
-                  <th>Type</th>
-                  <th>Details</th>
-                  <th>Status</th>
-                  <th>Total Activities</th>
+                  <th onClick={() => handleSort('id')} style={{ cursor: 'pointer' }}>User ID{getSortIcon('id')}</th>
+                  <th onClick={() => handleSort('name')} style={{ cursor: 'pointer' }}>Name{getSortIcon('name')}</th>
+                  <th onClick={() => handleSort('type')} style={{ cursor: 'pointer' }}>Type{getSortIcon('type')}</th>
+                  <th onClick={() => handleSort('details')} style={{ cursor: 'pointer' }}>Details{getSortIcon('details')}</th>
+                  <th onClick={() => handleSort('currentlyInside')} style={{ cursor: 'pointer' }}>Status{getSortIcon('currentlyInside')}</th>
+                  <th onClick={() => handleSort('totalActivities')} style={{ cursor: 'pointer' }}>Total Activities{getSortIcon('totalActivities')}</th>
                   <th>Today</th>
-                  <th>Last Activity</th>
+                  <th onClick={() => handleSort('lastActivity')} style={{ cursor: 'pointer' }}>Last Activity{getSortIcon('lastActivity')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -408,23 +344,11 @@ const exportUserReport = () => {
                   <tr key={index} style={{ borderLeft: user.currentlyInside ? '4px solid #28a745' : '4px solid #6c757d' }}>
                     <td>{user.id}</td>
                     <td>{user.name}</td>
-                    <td>
-                      <span className={`user-type-badge ${user.type.toLowerCase()}-type`}>
-                        {user.type}
-                      </span>
-                    </td>
+                    <td><span className={`user-type-badge ${user.type.toLowerCase()}-type`}>{user.type}</span></td>
                     <td>{user.details}</td>
-                    <td>
-                      <span className={`status-badge ${user.currentlyInside ? 'in' : 'out'}`}>
-                        {user.currentlyInside ? 'Inside' : 'Outside'}
-                      </span>
-                    </td>
+                    <td><span className={`status-badge ${user.currentlyInside ? 'in' : 'out'}`}>{user.currentlyInside ? 'Inside' : 'Outside'}</span></td>
                     <td>{user.totalActivities}</td>
-                    <td>
-                      <span style={{ fontSize: '0.8rem', background: '#f8f9fa', padding: '4px 8px', borderRadius: '10px' }}>
-                        {user.timeInToday}↑ {user.timeOutToday}↓
-                      </span>
-                    </td>
+                    <td><span style={{ fontSize: '0.8rem', background: '#f8f9fa', padding: '4px 8px', borderRadius: '10px' }}>{user.timeInToday}↑ {user.timeOutToday}↓</span></td>
                     <td>
                       {user.lastActivity ? (
                         <span style={{ fontSize: '0.8rem' }}>

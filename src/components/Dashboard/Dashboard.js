@@ -10,7 +10,7 @@ const Dashboard = () => {
   const { data: guests, loading: guestsLoading } = useRealtimeData('guests');
   const { data: timeTracking } = useRealtimeData('time_tracking');
 
-  // Deduplicate guests by name like in GuestsTable
+  // Deduplicate guests by name, handling spaces and commas
   const uniqueGuests = useMemo(() => {
     if (!guests || guests.length === 0) return [];
     
@@ -18,7 +18,8 @@ const Dashboard = () => {
     const guestMap = new Map();
     
     guests.forEach(guest => {
-      const guestName = guest.full_name?.trim().toUpperCase();
+      // Enhanced normalization: remove spaces and commas, then uppercase
+      const guestName = guest.full_name?.replace(/[\s,]/g, '').toUpperCase();
       if (!guestName) return;
       
       const currentDate = new Date(guest.created_date);

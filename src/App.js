@@ -7,7 +7,6 @@ import GuestsTable from './components/Tables/GuestsTable';
 import TimeTrackingTable from './components/Tables/TimeTrackingTable';
 import CurrentStatusTable from './components/Tables/CurrentStatusTable';
 import VipRecordsTable from './components/Tables/VipRecordsTable';
-import DailyReports from './components/Reports/DailyReports';
 import TimeReports from './components/Reports/TimeReports';
 import UserReports from './components/Reports/UserReports';
 import './App.css';
@@ -31,8 +30,6 @@ function App() {
         return <CurrentStatusTable />;
       case 'vip_records':
         return <VipRecordsTable />;
-      case 'daily_reports':
-        return <DailyReports />;
       case 'time_reports':
         return <TimeReports />;
       case 'user_reports':

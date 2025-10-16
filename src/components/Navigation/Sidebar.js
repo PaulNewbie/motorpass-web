@@ -45,7 +45,6 @@ const Sidebar = ({ activeTable, setActiveTable }) => {
       isOpen: isReportsOpen,
       setIsOpen: setIsReportsOpen,
       children: [
-        { key: 'daily_reports', label: 'Daily Reports', icon: '📋' },
         { key: 'time_reports', label: 'Time Reports', icon: '⏰' },
         { key: 'user_reports', label: 'User Reports', icon: '👥' }
       ]
@@ -69,7 +68,7 @@ const Sidebar = ({ activeTable, setActiveTable }) => {
       return ['students', 'staff', 'guests'].includes(activeTable);
     }
     if (itemKey === 'reports') {
-      return ['daily_reports', 'time_reports', 'user_reports'].includes(activeTable);
+      return ['time_reports', 'user_reports'].includes(activeTable);
     }
     return activeTable === itemKey;
   };
