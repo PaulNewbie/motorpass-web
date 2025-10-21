@@ -1,3 +1,4 @@
+// paulnewbie/motorpass-web/motorpass-web-main/src/components/Reports/UserReports.js
 import React from 'react';
 import { useRealtimeData } from '../../hooks/useRealtimeData';
 import LoadingSpinner from '../Common/LoadingSpinner';
@@ -35,12 +36,6 @@ const UserReports = () => {
           lastActivity: userActivity.length > 0 ? 
             userActivity.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0].timestamp : null,
           currentlyInside: !!currentlyInside,
-          timeInToday: userActivity.filter(r => 
-            new Date(r.timestamp).toDateString() === new Date().toDateString() && r.action === 'IN'
-          ).length,
-          timeOutToday: userActivity.filter(r => 
-            new Date(r.timestamp).toDateString() === new Date().toDateString() && r.action === 'OUT'
-          ).length
         };
       });
       allUsers = [...allUsers, ...studentsWithActivity];
@@ -63,12 +58,6 @@ const UserReports = () => {
           lastActivity: userActivity.length > 0 ? 
             userActivity.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0].timestamp : null,
           currentlyInside: !!currentlyInside,
-          timeInToday: userActivity.filter(r => 
-            new Date(r.timestamp).toDateString() === new Date().toDateString() && r.action === 'IN'
-          ).length,
-          timeOutToday: userActivity.filter(r => 
-            new Date(r.timestamp).toDateString() === new Date().toDateString() && r.action === 'OUT'
-          ).length
         };
       });
       allUsers = [...allUsers, ...staffWithActivity];
@@ -92,12 +81,6 @@ const UserReports = () => {
           lastActivity: userActivity.length > 0 ? 
             userActivity.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0].timestamp : null,
           currentlyInside: !!currentlyInside,
-          timeInToday: userActivity.filter(r => 
-            new Date(r.timestamp).toDateString() === new Date().toDateString() && r.action === 'IN'
-          ).length,
-          timeOutToday: userActivity.filter(r => 
-            new Date(r.timestamp).toDateString() === new Date().toDateString() && r.action === 'OUT'
-          ).length
         };
       });
       allUsers = [...allUsers, ...guestsWithActivity];
@@ -152,100 +135,92 @@ const UserReports = () => {
     return ' ▼';
   };
 
-  const exportUserReport = () => {
+const exportUserReport = () => {
     const users = sortedUsers;
     if (!Array.isArray(users) || users.length === 0) {
       alert("No user data available to export.");
       return;
     }
-
-    const title = [["User Report"]];
+    
+    const title = [["MotorPass System"]];
+    const subtitle = [["User Report"]];
     const meta = [
       [`Generated on: ${new Date().toLocaleString()}`],
       [`Total Users: ${users.length}`],
     ];
-
     const headers = [
       [
-        "User ID",
-        "Name",
-        "Type",
-        "Details",
-        "Plate Number",
-        "Currently Inside",
-        "Total Activities",
-        "Today's IN",
-        "Today's OUT",
-        "Last Activity",
+        "User ID", "Name", "Type", "Details", "Plate Number",
+        "Currently Inside", "Total Activities", "Last Activity",
       ],
     ];
 
     const data = users.map((user) => [
-      user.id,
-      user.name,
-      user.type,
-      user.details,
-      user.plateNumber,
-      user.currentlyInside ? "Yes" : "No",
-      user.totalActivities,
-      user.timeInToday,
-      user.timeOutToday,
-      user.lastActivity
-        ? new Date(user.lastActivity).toLocaleString()
-        : "Never",
+      user.id, user.name, user.type, user.details, user.plateNumber,
+      user.currentlyInside ? "Yes" : "No", user.totalActivities,
+      user.lastActivity ? new Date(user.lastActivity).toLocaleString() : "Never",
     ]);
 
-    const worksheet = XLSX.utils.aoa_to_sheet([
-      ...title,
-      [],
-      ...meta,
-      [],
-      ...headers,
-      ...data,
-    ]);
+    const worksheet = XLSX.utils.aoa_to_sheet([ ...title, ...subtitle, [], ...meta, [], ...headers, ...data ]);
 
-    // === Column widths ===
     worksheet["!cols"] = [
       { wch: 20 }, { wch: 36 }, { wch: 12 }, { wch: 25 }, { wch: 16 },
-      { wch: 16 }, { wch: 18 }, { wch: 12 }, { wch: 12 }, { wch: 24 },
+      { wch: 16 }, { wch: 18 }, { wch: 24 },
+    ];
+    
+    const headerColCount = headers[0].length - 1;
+    worksheet["!merges"] = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: headerColCount } }, // Main title
+      { s: { r: 1, c: 0 }, e: { r: 1, c: headerColCount } }, // Subtitle
+      { s: { r: 3, c: 0 }, e: { r: 3, c: headerColCount } }, // Meta 1
+      { s: { r: 4, c: 0 }, e: { r: 4, c: headerColCount } }, // Meta 2
     ];
 
-    // === Styling ===
-    const titleStyle = { font: { bold: true, sz: 16, color: { rgb: "1F4E78" } }, alignment: { horizontal: "center" } };
-    const metaStyle = { font: { italic: true, color: { rgb: "555555" } }, alignment: { horizontal: "left" } };
-    const headerStyle = { font: { bold: true, color: { rgb: "FFFFFF" } }, fill: { type: "pattern", patternType: "solid", fgColor: { rgb: "4472C4" } }, border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } }, alignment: { horizontal: "center", vertical: "center" } };
+    const mainTitleStyle = { font: { bold: true, sz: 18, color: { rgb: "1F4E78" } }, alignment: { horizontal: "center", vertical: "center" } };
+    const subtitleStyle = { font: { bold: true, sz: 14 }, alignment: { horizontal: "center", vertical: "center" } };
+    const metaStyle = { font: { italic: true, color: { rgb: "555555" } }, alignment: { horizontal: "center" } };
+    const headerStyle = { font: { bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "4472C4" } }, border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } }, alignment: { horizontal: "center", vertical: "center" } };
     const cellStyle = { border: { top: { style: "thin", color: { rgb: "DDDDDD" } }, bottom: { style: "thin", color: { rgb: "DDDDDD" } }, left: { style: "thin", color: { rgb: "DDDDDD" } }, right: { style: "thin", color: { rgb: "DDDDDD" } } }, alignment: { horizontal: "center", vertical: "center" } };
-    const altRowStyle = { ...cellStyle, fill: { type: "pattern", patternType: "solid", fgColor: { rgb: "F9F9F9" } } };
+    const altRowStyle = { ...cellStyle, fill: { fgColor: { rgb: "F9F9F9" } } };
 
-    // === Apply styling ===
-    const range = XLSX.utils.decode_range(worksheet["!ref"]);
-    for (let R = range.s.r; R <= range.e.r; R++) {
-      for (let C = range.s.c; C <= range.e.c; C++) {
-        const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
-        if (!worksheet[cellRef]) continue;
+    if(worksheet['A1']) worksheet['A1'].s = mainTitleStyle;
+    if(worksheet['A2']) worksheet['A2'].s = subtitleStyle;
+    if(worksheet['A4']) worksheet['A4'].s = metaStyle;
+    if(worksheet['A5']) worksheet['A5'].s = metaStyle;
 
-        if (R === 0) worksheet[cellRef].s = titleStyle;
-        else if (R === 2 || R === 3) worksheet[cellRef].s = metaStyle;
-        else if (R === 5) worksheet[cellRef].s = headerStyle;
-        else {
-          const rowDataIndex = R - 6;
-          const record = users[rowDataIndex];
-          const baseStyle = R % 2 === 0 ? altRowStyle : cellStyle;
+    const headerRowIndex = 6;
+    const dataStartIndex = headerRowIndex + 1;
 
-          if ((C === 7 || C === 8) && record) {
-            const isInCol = C === 7;
-            const count = isInCol ? record.timeInToday : record.timeOutToday;
-            if (count > 0) {
-              worksheet[cellRef].s = { ...baseStyle, fill: { type: "pattern", patternType: "solid", fgColor: { rgb: isInCol ? "E2F0D9" : "F8D7DA" } }, font: { bold: true, color: { rgb: isInCol ? "006100" : "9C0006" } } };
+    for (let R = headerRowIndex; R < worksheet['!ref'].split(':')[1].replace(/\D/g, ''); R++) {
+        for (let C = 0; C <= headerColCount; C++) {
+            const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+            if (!worksheet[cellRef]) continue;
+
+            if (R === headerRowIndex) {
+                worksheet[cellRef].s = headerStyle;
             } else {
-              worksheet[cellRef].s = baseStyle;
+                const baseStyle = (R - dataStartIndex) % 2 === 1 ? altRowStyle : cellStyle;
+                worksheet[cellRef].s = baseStyle;
+
+                const leftAlignCols = [1, 3, 7];
+                if (leftAlignCols.includes(C)) {
+                    worksheet[cellRef].s.alignment = { ...baseStyle.alignment, horizontal: "left" };
+                }
             }
-          } else {
-            worksheet[cellRef].s = baseStyle;
-          }
         }
-      }
     }
+
+    const rowsPerPage = 40;
+    const pageBreaks = [];
+    for (let i = rowsPerPage; i < data.length; i += rowsPerPage) {
+        pageBreaks.push({ r: dataStartIndex + i - 1 });
+    }
+    if (pageBreaks.length > 0) {
+        worksheet['!pageBreaks'] = pageBreaks;
+    }
+    
+    // Set page setup for A4 landscape
+    worksheet['!pageSetup'] = { orientation: "landscape", paper: 9 };
 
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "User Report");
@@ -260,8 +235,7 @@ const UserReports = () => {
     studentsCount: users.filter(u => u.type === 'STUDENT').length,
     staffCount: users.filter(u => u.type === 'STAFF').length,
     visitorsCount: users.filter(u => u.type === 'VISITOR').length,
-    currentlyInside: users.filter(u => u.currentlyInside).length,
-    activeToday: users.filter(u => u.timeInToday > 0 || u.timeOutToday > 0).length
+    currentlyInside: users.filter(u => u.currentlyInside).length
   };
 
   return (
@@ -316,9 +290,6 @@ const UserReports = () => {
         <div className="stat-card" style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center' }}>
           <h3 style={{ marginRight: '8px' }}>{stats.currentlyInside}</h3><p>Currently Inside</p>
         </div>
-        <div className="stat-card" style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center' }}>
-          <h3 style={{ marginRight: '8px' }}>{stats.activeToday}</h3><p>Active Today</p>
-        </div>
       </div>
 
       {/* Users Table */}
@@ -335,7 +306,6 @@ const UserReports = () => {
                   <th onClick={() => handleSort('details')} style={{ cursor: 'pointer' }}>Details{getSortIcon('details')}</th>
                   <th onClick={() => handleSort('currentlyInside')} style={{ cursor: 'pointer' }}>Status{getSortIcon('currentlyInside')}</th>
                   <th onClick={() => handleSort('totalActivities')} style={{ cursor: 'pointer' }}>Total Activities{getSortIcon('totalActivities')}</th>
-                  <th>Today</th>
                   <th onClick={() => handleSort('lastActivity')} style={{ cursor: 'pointer' }}>Last Activity{getSortIcon('lastActivity')}</th>
                 </tr>
               </thead>
@@ -348,7 +318,6 @@ const UserReports = () => {
                     <td>{user.details}</td>
                     <td><span className={`status-badge ${user.currentlyInside ? 'in' : 'out'}`}>{user.currentlyInside ? 'Inside' : 'Outside'}</span></td>
                     <td>{user.totalActivities}</td>
-                    <td><span style={{ fontSize: '0.8rem', background: '#f8f9fa', padding: '4px 8px', borderRadius: '10px' }}>{user.timeInToday}↑ {user.timeOutToday}↓</span></td>
                     <td>
                       {user.lastActivity ? (
                         <span style={{ fontSize: '0.8rem' }}>

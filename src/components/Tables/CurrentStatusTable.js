@@ -265,7 +265,7 @@ const CurrentStatusTable = () => {
           <thead>
             <tr>
               <th>User ID</th>
-              <th>Full Name</th>
+              <th>Name</th>
               <th>User Type</th>
               <th>Status</th>
               <th>Last Update</th>

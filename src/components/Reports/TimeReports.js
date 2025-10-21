@@ -110,50 +110,110 @@ const TimeReports = () => {
     } catch (e) { return 'Error'; }
   };
 
-  const exportTimeReportXLSX = (data) => {
+
+const exportTimeReportXLSX = (data) => {
     if (!data || data.length === 0) {
       alert("No records available to export.");
       return;
     }
     
-    const worksheetData = [
-      ["Time Report"],
-      [`Date Range: ${dateFrom} → ${dateTo}`],
-      [`Generated On: ${new Date().toLocaleString()}`],
-      [],
+    const title = [["MotorPass System"]];
+    const subtitle = [["Time Report"]];
+    const meta = [
+        [`Date Range: ${dateFrom} to ${dateTo}`],
+        [`Generated On: ${new Date().toLocaleString()}`],
+    ];
+    const headers = [
       ["User ID", "Name", "Type", "Time In", "Time Out", "Duration", "Status"],
-      ...data.map((session) => [
-        session.user_id,
-        session.user_name,
-        session.user_type === "GUEST" ? "VISITOR" : session.user_type,
-        new Date(session.time_in).toLocaleString(),
-        session.time_out ? new Date(session.time_out).toLocaleString() : 'Active',
-        calculateDuration(session.time_in, session.time_out),
-        session.status,
-      ]),
     ];
 
-    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
-    worksheet["!cols"] = [{ wch: 15 }, { wch: 36 }, { wch: 12 }, { wch: 22 }, { wch: 22 }, { wch: 12 }, { wch: 10 }];
+    const dataRows = data.map((session) => [
+      session.user_id,
+      session.user_name,
+      session.user_type === "GUEST" ? "VISITOR" : session.user_type,
+      new Date(session.time_in).toLocaleString(),
+      session.time_out ? new Date(session.time_out).toLocaleString() : "Active",
+      calculateDuration(session.time_in, session.time_out),
+      session.status,
+    ]);
+
+    const worksheet = XLSX.utils.aoa_to_sheet([
+      ...title,
+      ...subtitle,
+      [], // Spacer
+      ...meta,
+      [], // Spacer
+      ...headers,
+      ...dataRows,
+    ]);
+
+    worksheet["!cols"] = [
+      { wch: 15 }, { wch: 36 }, { wch: 12 }, { wch: 22 }, { wch: 22 },
+      { wch: 12 }, { wch: 10 },
+    ];
+
+    const headerColCount = headers[0].length - 1;
+    worksheet["!merges"] = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: headerColCount } }, // Main title
+      { s: { r: 1, c: 0 }, e: { r: 1, c: headerColCount } }, // Subtitle
+      { s: { r: 3, c: 0 }, e: { r: 3, c: headerColCount } }, // Meta 1
+      { s: { r: 4, c: 0 }, e: { r: 4, c: headerColCount } }, // Meta 2
+    ];
+
+    const mainTitleStyle = { font: { bold: true, sz: 18, color: { rgb: "1F4E78" } }, alignment: { horizontal: "center", vertical: "center" } };
+    const subtitleStyle = { font: { bold: true, sz: 14 }, alignment: { horizontal: "center", vertical: "center" } };
+    const metaStyle = { font: { italic: true, color: { rgb: "555555" } }, alignment: { horizontal: "center" } };
+    const headerStyle = { font: { bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "4472C4" } }, border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } }, alignment: { horizontal: "center", vertical: "center" } };
+    const cellStyle = { border: { top: { style: "thin", color: { rgb: "DDDDDD" } }, bottom: { style: "thin", color: { rgb: "DDDDDD" } }, left: { style: "thin", color: { rgb: "DDDDDD" } }, right: { style: "thin", color: { rgb: "DDDDDD" } } }, alignment: { horizontal: "center", vertical: "center" } };
+    const altRowStyle = { ...cellStyle, fill: { fgColor: { rgb: "F9F9F9" } } };
     
-    const headerStyle = { font: { bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "4472C4" } }, alignment: { horizontal: "center" } };
-    const range = XLSX.utils.decode_range(worksheet["!ref"]);
-    for (let R = 4; R < 5; R++) {
-        for (let C = range.s.c; C <= range.e.c; C++) {
-            const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
-            if (worksheet[cellRef]) {
-                worksheet[cellRef].s = headerStyle;
+    if(worksheet['A1']) worksheet['A1'].s = mainTitleStyle;
+    if(worksheet['A2']) worksheet['A2'].s = subtitleStyle;
+    if(worksheet['A4']) worksheet['A4'].s = metaStyle;
+    if(worksheet['A5']) worksheet['A5'].s = metaStyle;
+
+    const headerRowIndex = 6;
+    const dataStartIndex = headerRowIndex + 1;
+
+    for (let R = headerRowIndex; R < worksheet['!ref'].split(':')[1].replace(/\D/g, ''); R++) {
+      for (let C = 0; C <= headerColCount; C++) {
+        const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+        if (!worksheet[cellRef]) continue;
+
+        if (R === headerRowIndex) {
+            worksheet[cellRef].s = headerStyle;
+        } else {
+            const baseStyle = (R - dataStartIndex) % 2 === 1 ? altRowStyle : cellStyle;
+            worksheet[cellRef].s = baseStyle;
+
+            const leftAlignCols = [1, 3, 4];
+            if (leftAlignCols.includes(C)) {
+              worksheet[cellRef].s.alignment = { ...baseStyle.alignment, horizontal: "left" };
+            }
+            
+            if (C === 6) { // Status column
+                const status = worksheet[cellRef].v;
+                if (status === 'IN' || status === 'Active') {
+                    worksheet[cellRef].s = { ...baseStyle, font: { color: { rgb: '006100' }, bold: true }, fill: { fgColor: { rgb: 'E2F0D9' } } };
+                } else if (status === 'OUT') {
+                    worksheet[cellRef].s = { ...baseStyle, font: { color: { rgb: '9C0006' }, bold: true }, fill: { fgColor: { rgb: 'F8D7DA' } } };
+                }
             }
         }
+      }
     }
-    for (let R = 5; R <= range.e.r; R++) {
-        const statusCellRef = XLSX.utils.encode_cell({ r: R, c: 6 });
-        if(worksheet[statusCellRef] && worksheet[statusCellRef].v === 'IN') {
-          worksheet[statusCellRef].s = { font: { color: { rgb: '006100' } }, fill: { fgColor: { rgb: 'E2F0D9' } } };
-        } else if (worksheet[statusCellRef] && worksheet[statusCellRef].v === 'OUT') {
-          worksheet[statusCellRef].s = { font: { color: { rgb: '9C0006' } }, fill: { fgColor: { rgb: 'F8D7DA' } } };
-        }
+
+    const rowsPerPage = 40;
+    const pageBreaks = [];
+    for (let i = rowsPerPage; i < dataRows.length; i += rowsPerPage) {
+      pageBreaks.push({ r: dataStartIndex + i - 1 });
     }
+    if (pageBreaks.length > 0) {
+      worksheet['!pageBreaks'] = pageBreaks;
+    }
+    
+    // Set page setup for A4 landscape
+    worksheet['!pageSetup'] = { orientation: "landscape", paper: 9 };
     
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Time Report");
