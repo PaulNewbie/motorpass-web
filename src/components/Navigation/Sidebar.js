@@ -1,14 +1,24 @@
 import React from 'react';
+import { firebaseService } from '../../services/firebaseService';
 import './Sidebar.css';
 
-const Sidebar = ({ activeTable, setActiveTable }) => {
+const Sidebar = ({ activeTable, setActiveTable, setUser }) => {
   const [isUsersOpen, setIsUsersOpen] = React.useState(false);
   const [isReportsOpen, setIsReportsOpen] = React.useState(false);
 
+  const handleLogout = async () => {
+    try {
+      await firebaseService.logout();
+      setUser(null);
+    } catch (error) {
+      console.error("Error logging out:", error);
+    }
+  };
+
   const menuItems = [
-    { 
-      key: 'dashboard', 
-      label: 'Dashboard', 
+    {
+      key: 'dashboard',
+      label: 'Dashboard',
       icon: '📊',
       type: 'single'
     },
@@ -22,18 +32,18 @@ const Sidebar = ({ activeTable, setActiveTable }) => {
       children: [
         { key: 'students', label: 'Students', icon: '👨‍🎓' },
         { key: 'staff', label: 'Staff', icon: '👔' },
-        { key: 'guests', label: 'Visitors', icon: '🧑‍💼' } // Changed label only
+        { key: 'guests', label: 'Visitors', icon: '🧑‍💼' }
       ]
     },
-    { 
-      key: 'current_status', 
-      label: 'Current Status', 
+    {
+      key: 'current_status',
+      label: 'Current Status',
       icon: '📍',
       type: 'single'
     },
-    { 
-      key: 'vip_records', 
-      label: 'VIP Records', 
+    {
+      key: 'vip_records',
+      label: 'VIP Records',
       icon: '⭐',
       type: 'single'
     },
@@ -115,6 +125,12 @@ const Sidebar = ({ activeTable, setActiveTable }) => {
           </div>
         ))}
       </nav>
+      <div className="sidebar-footer">
+        <button className="nav-item" onClick={handleLogout}>
+          <span className="nav-icon">🚪</span>
+          <span className="nav-label">Logout</span>
+        </button>
+      </div>
     </div>
   );
 };

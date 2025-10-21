@@ -52,7 +52,7 @@ const TimeTrackingTable = () => {
           <thead>
             <tr>
               <th>ID</th>
-              <th>Full Name</th>
+              <th>Name</th>
               <th>User Type</th>
               <th>Action</th>
               <th>Timestamp</th>

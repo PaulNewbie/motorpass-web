@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from './components/Navigation/Sidebar';
 import Dashboard from './components/Dashboard/Dashboard';
 import StudentsTable from './components/Tables/StudentsTable';
@@ -9,10 +9,24 @@ import CurrentStatusTable from './components/Tables/CurrentStatusTable';
 import VipRecordsTable from './components/Tables/VipRecordsTable';
 import TimeReports from './components/Reports/TimeReports';
 import UserReports from './components/Reports/UserReports';
+import Login from './components/Login/Login';
+import { auth } from './config/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 import './App.css';
 
 function App() {
   const [activeTable, setActiveTable] = useState('dashboard');
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUser(user);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const renderContent = () => {
     switch (activeTable) {
@@ -39,9 +53,17 @@ function App() {
     }
   };
 
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!user) {
+    return <Login setUser={setUser} />;
+  }
+
   return (
     <div className="app">
-      <Sidebar activeTable={activeTable} setActiveTable={setActiveTable} />
+      <Sidebar activeTable={activeTable} setActiveTable={setActiveTable} setUser={setUser} />
       <main className="main-content">
         {renderContent()}
       </main>

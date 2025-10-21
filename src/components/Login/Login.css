@@ -1,0 +1,128 @@
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%); /* Lighter, modern gradient */
+  overflow: hidden; /* Hide overflowing particles */
+  position: relative;
+  font-family: 'Poppins', sans-serif; /* A modern font */
+}
+
+/* Background pattern/particles */
+.login-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zm0 60v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zM0 4L4 0h2L0 6V4zm0 60L4 60h2L0 66v-2zm36-4L40 56h2L36 62v-2zm0-60L40-4h2L36 2V0zM60 4L56 0h-2l6 6V4zm0 60L56 60h-2l6 6v-2zM24 0l4 4-2 2-4-4 2-2zm0 60l4 4-2 2-4-4 2-2zM60 24l-4 4-2-2 4-4 2 2zm-60 24l4 4-2 2-4-4 2-2zm0-24l4-4 2 2-4 4-2-2zm60 0l-4-4 2-2 4 4-2 2zm0 24l-4-4 2-2 4 4-2 2z' fill='%239C92AC' fill-opacity='0.15'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  animation: backgroundPan 60s linear infinite; /* Slow, continuous movement */
+  z-index: 0; /* Ensures it stays behind the login box */
+  opacity: 0.4;
+}
+
+@keyframes backgroundPan {
+  from {
+    transform: translate(0, 0);
+  }
+  to {
+    transform: translate(-60px, -60px); /* Move by the size of the pattern */
+  }
+}
+
+.login-box {
+  background: rgba(255, 255, 255, 0.95); /* Slightly transparent white */
+  backdrop-filter: blur(10px); /* Frosted glass effect */
+  padding: 50px 40px; /* More vertical padding */
+  border-radius: 20px; /* Softer corners */
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15); /* Stronger shadow */
+  width: 100%;
+  max-width: 450px; /* Slightly wider */
+  text-align: center;
+  position: relative; /* For z-index to work */
+  z-index: 1; /* Bring to front */
+  animation: fadeIn 1s ease-out; /* Fade in animation */
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.login-box h2 {
+  margin-bottom: 30px; /* More space below title */
+  color: #3f51b5; /* A vibrant blue */
+  font-weight: 800; /* Bolder title */
+  letter-spacing: 1px;
+}
+
+.input-group {
+  margin-bottom: 25px; /* More space between input groups */
+  text-align: left;
+}
+
+.input-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: #555; /* Slightly darker label */
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.input-group input {
+  width: calc(100% - 24px); /* Account for padding */
+  padding: 14px 12px; /* More padding */
+  border: 1px solid #e0e0e0; /* Lighter border */
+  border-radius: 10px; /* Softer input corners */
+  font-size: 1rem;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  background-color: #fcfcfc;
+}
+
+.input-group input:focus {
+  border-color: #667eea; /* Highlight on focus */
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+  outline: none;
+}
+
+.login-box button {
+  width: 100%;
+  padding: 15px; /* More padding */
+  background: linear-gradient(45deg, #667eea 0%, #764ba2 100%); /* Adjusted gradient direction */
+  color: white;
+  border: none;
+  border-radius: 10px; /* Softer button corners */
+  font-size: 1.1rem; /* Larger font */
+  font-weight: 700; /* Bolder text */
+  cursor: pointer;
+  transition: all 0.3s ease;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.login-box button:disabled {
+  background: #cccccc;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.login-box button:hover:not(:disabled) {
+  transform: translateY(-3px); /* More pronounced lift */
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2); /* Stronger shadow on hover */
+}
+
+.error-message {
+  color: #e74c3c; /* A more subtle red */
+  margin-top: -10px; /* Pull closer to button */
+  margin-bottom: 20px;
+  font-size: 0.9rem;
+}
+

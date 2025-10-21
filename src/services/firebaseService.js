@@ -1,12 +1,14 @@
 // src/services/firebaseService.js
-import { db } from '../config/firebase';
+import { db, auth } from '../config/firebase';
 import {
   collection,
   onSnapshot,
   query,
   orderBy
 } from 'firebase/firestore';
+import { signInWithEmailAndPassword, signOut } from "firebase/auth";
 
+// ... (rest of the file is unchanged)
 // Firestore operations
 const firestoreOperations = {
   subscribe: (collectionName, callback, orderByField = null) => {
@@ -50,5 +52,14 @@ export const firebaseService = {
     firestoreOperations.subscribe('current_status', callback),
 
   getVipRecords: (callback) =>
-    firestoreOperations.subscribe('vip_records', callback, 'time_in')
+    firestoreOperations.subscribe('vip_records', callback, 'time_in'),
+
+  login: async (email, password) => {
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    return userCredential.user;
+  },
+
+  logout: async () => {
+    await signOut(auth);
+  }
 };
