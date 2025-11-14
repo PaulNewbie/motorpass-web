@@ -53,22 +53,46 @@ const OvertimeTable = () => {
 
     const allInUsers = currentStatus.filter(person => person.status === 'IN');
 
-    const flaggedUsers = allInUsers.filter(person => {
-      const lastActionTime = new Date(person.last_update || person.last_action_time || person.timestamp);
+    const flaggedUsers = [];
+
+    allInUsers.forEach(person => {
+      let lastActionTime;
+      try {
+        // Handle Firestore Timestamp
+        const timeData = person.last_update || person.last_action_time || person.timestamp;
+        if (timeData && typeof timeData.toDate === 'function') {
+          lastActionTime = timeData.toDate();
+        } else {
+          lastActionTime = new Date(timeData);
+        }
+      } catch (e) {
+        lastActionTime = new Date(); // Failsafe
+      }
       
-      // Check duration
       const durationMs = now.getTime() - lastActionTime.getTime();
       const isOverDuration = durationMs > durationThresholdMs;
+      
+      let flagReason = '';
+      if (isAfterHours && isOverDuration) {
+          flagReason = 'After Hours & Long Duration';
+      } else if (isOverDuration) {
+          flagReason = 'Long Duration (> 12h)';
+      } else if (isAfterHours) {
+          flagReason = 'Inside After 6 PM';
+      }
 
-      // Flag if it's after 6 PM OR if they've been in for > 12 hours
-      return isAfterHours || isOverDuration;
+      if (isAfterHours || isOverDuration) {
+        flaggedUsers.push({
+          ...person,
+          flagReason: flagReason,
+          entryTime: lastActionTime // for sorting
+        });
+      }
     });
     
-    // Sort by last action time, most recent first
+    // Sort by last action time, oldest first (longest duration)
     return flaggedUsers.sort((a, b) => {
-        const aTime = new Date(a.last_update || a.last_action_time || a.timestamp);
-        const bTime = new Date(b.last_update || b.last_action_time || b.timestamp);
-        return aTime - bTime; // Oldest (longest duration) first
+        return a.entryTime - b.entryTime; 
     });
 
   }, [currentStatus, isAfterHours, now, durationThresholdMs]);
@@ -101,7 +125,7 @@ const OvertimeTable = () => {
       <div className="table-header">
         <h2>Overtime Monitoring</h2>
         <p className="table-description">
-          Users inside after 6:00 PM or for more than 12 hours.
+          Users currently inside after 6:00 PM or for more than 12 hours.
           ({overtimeUsers.length} users flagged)
         </p>
       </div>
@@ -116,6 +140,7 @@ const OvertimeTable = () => {
               <th>Status</th>
               <th>Time In (Last Action)</th>
               <th>Duration</th>
+              <th>Flag Reason</th>
             </tr>
           </thead>
           <tbody>
@@ -135,11 +160,16 @@ const OvertimeTable = () => {
                       {calculateDuration(person.last_update || person.last_action_time || person.timestamp)}
                     </span>
                   </td>
+                  <td>
+                    <span style={{ color: '#c0392b', fontWeight: '600' }}>
+                      {person.flagReason}
+                    </span>
+                  </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan="6" style={{ textAlign: 'center', padding: '40px' }}>
+                <td colSpan="7" style={{ textAlign: 'center', padding: '40px' }}>
                   <h4>No Users Flagged</h4>
                   {isAfterHours ? (
                     <p>All users have timed out for the day.</p>
