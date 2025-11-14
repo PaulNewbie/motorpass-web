@@ -10,39 +10,32 @@ const Dashboard = () => {
   const { data: guests, loading: guestsLoading } = useRealtimeData('guests');
   const { data: timeTracking } = useRealtimeData('time_tracking');
 
-  // Deduplicate guests by name, handling spaces and commas
   const uniqueGuests = useMemo(() => {
     if (!guests || guests.length === 0) return [];
     
-    // Create a map to store the latest entry for each guest name
     const guestMap = new Map();
     
     guests.forEach(guest => {
-      // Enhanced normalization: remove spaces and commas, then uppercase
       const guestName = guest.full_name?.replace(/[\s,]/g, '').toUpperCase();
       if (!guestName) return;
       
       const currentDate = new Date(guest.created_date);
       
-      // If we haven't seen this guest name before, or if this entry is more recent
       if (!guestMap.has(guestName)) {
         guestMap.set(guestName, guest);
       } else {
         const existingGuest = guestMap.get(guestName);
         const existingDate = new Date(existingGuest.created_date);
         
-        // Keep the most recent entry
         if (currentDate > existingDate) {
           guestMap.set(guestName, guest);
         }
       }
     });
     
-    // Convert map back to array
     return Array.from(guestMap.values());
   }, [guests]);
 
-  // Deduplicate current status by user name, keeping most recent activity
   const uniqueCurrentStatus = useMemo(() => {
     const userMap = new Map();
     currentStatus.forEach(person => {
@@ -58,7 +51,6 @@ const Dashboard = () => {
     return Array.from(userMap.values());
   }, [currentStatus]);
 
-  // Get today's activity
   const todayActivity = useMemo(() => {
     const today = new Date().toISOString().split('T')[0];
     return timeTracking.filter(record => {
@@ -67,20 +59,19 @@ const Dashboard = () => {
     });
   }, [timeTracking]);
 
-  // --- NEW: Overtime/Over-duration Logic ---
   const { overtimeUsers, isActivelyMonitoring } = useMemo(() => {
     const now = new Date();
     const currentHour = now.getHours();
-    const overtimeStartHour = 18; // 6 PM
-    const durationThresholdMs = 12 * 60 * 60 * 1000; // 12 hours
-    const isAfterHours = currentHour >= overtimeStartHour;
+    const overtimeStartHour = 18; 
+    const durationThresholdMs = 12 * 60 * 60 * 1000; 
+    
+    const isAfterHours = currentHour >= overtimeStartHour || currentHour < 5;
 
     const allInUsers = uniqueCurrentStatus.filter(person => person.status === 'IN');
 
     const flaggedUsers = allInUsers.filter(person => {
       let lastActionTime;
       try {
-         // Handle Firestore Timestamp
         if (person.last_update && typeof person.last_update.toDate === 'function') {
           lastActionTime = person.last_update.toDate();
         } else if (person.last_action_time && typeof person.last_action_time.toDate === 'function') {
@@ -92,23 +83,19 @@ const Dashboard = () => {
           lastActionTime = new Date(person.last_update || person.last_action_time || person.timestamp);
         }
       } catch (e) {
-        lastActionTime = new Date(); // Failsafe
+        lastActionTime = new Date(); 
       }
       
-      // Check duration
       const durationMs = now.getTime() - lastActionTime.getTime();
       const isOverDuration = durationMs > durationThresholdMs;
 
-      // Flag if it's after 6 PM OR if they've been in for > 12 hours
       return isAfterHours || isOverDuration;
     });
     
-    // Determine if the notification should be shown
     const monitoringActive = isAfterHours || flaggedUsers.length > 0;
 
     return { overtimeUsers: flaggedUsers, isActivelyMonitoring: monitoringActive };
   }, [uniqueCurrentStatus]);
-  // --- END NEW LOGIC ---
 
   if (studentsLoading || staffLoading || statusLoading || guestsLoading) {
     return <LoadingSpinner />;
@@ -116,7 +103,6 @@ const Dashboard = () => {
 
   const peopleCurrentlyInside = uniqueCurrentStatus.filter(person => person.status === 'IN');
   
-  // --- Segregated Counts ---
   const studentsInside = peopleCurrentlyInside.filter(
     person => person.user_type === 'STUDENT'
   ).length;
@@ -126,7 +112,6 @@ const Dashboard = () => {
   const guestsInside = peopleCurrentlyInside.filter(
     person => person.user_type === 'GUEST'
   ).length;
-  // --- End Counts ---
 
   const todayEntries = todayActivity.filter(record => record.action === 'IN').length;
   const todayExits = todayActivity.filter(record => record.action === 'OUT').length;
@@ -134,7 +119,6 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard">
-      {/* Top Bar */}
       <div className="top-bar">
         <h1>MotorPass Dashboard</h1>
         <div className="user-info">
@@ -145,19 +129,16 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* --- NEW: Overtime Notification --- */}
       {isActivelyMonitoring && overtimeUsers.length > 0 && (
         <div className="overtime-notification">
           <span>
             <strong>Notification:</strong> There {overtimeUsers.length === 1 ? 'is' : 'are'}{' '}
             <strong>{overtimeUsers.length} user{overtimeUsers.length > 1 ? 's' : ''}</strong>{' '}
-            flagged for overtime. (Inside after 6 PM or 12 hours)
+            flagged for overtime. (Inside after 6 PM or {'>'} 12 hours)
           </span>
         </div>
       )}
-      {/* --- END NEW NOTIFICATION --- */}
 
-      {/* Main Statistics Grid */}
       <div className="stats-grid">
         <div className="stat-card highlight-card">
           <div className="stat-icon">🟢</div>
@@ -196,7 +177,6 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* System Overview */}
       <div className="card">
         <div className="card-header">
           <h2 className="card-title">System Overview</h2>
@@ -236,7 +216,6 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Current Status by Type */}
       <div className="card">
         <div className="card-header">
           <h2 className="card-title">Current Status by Type</h2>
@@ -268,8 +247,6 @@ const Dashboard = () => {
         </div>
       </div>
 
-
-      {/* People Currently Inside - Enhanced */}
       {peopleCurrentlyInside.length > 0 && (
         <div className="card">
           <div className="card-header">
@@ -323,7 +300,6 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* Quick Stats Summary */}
       <div className="card">
         <div className="card-header">
           <h2 className="card-title">Today's Summary</h2>
@@ -362,7 +338,6 @@ const Dashboard = () => {
   );
 };
 
-// Helper function to calculate duration
 const calculateDuration = (entryTime) => {
   const now = new Date();
   const diffMs = now - entryTime;
@@ -376,7 +351,6 @@ const calculateDuration = (entryTime) => {
   }
 };
 
-// Helper function to get peak hour
 const getPeakHour = (activities) => {
   if (activities.length === 0) return { hour: '--:--', count: 0 };
   

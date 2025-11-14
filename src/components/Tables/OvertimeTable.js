@@ -1,28 +1,19 @@
-// src/components/Tables/OvertimeTable.js
 import React, { useMemo } from 'react';
 import { useRealtimeData } from '../../hooks/useRealtimeData';
 import { formatDate } from '../../utils/dateUtils';
 import LoadingSpinner from '../Common/LoadingSpinner';
 import ErrorMessage from '../Common/ErrorMessage';
-import './Tables.css'; // Reusing the existing table styles
+import './Tables.css';
 
 const OvertimeTable = () => {
   const { data: currentStatus, loading, error } = useRealtimeData('current_status');
 
-  // Get current time information
-  const now = new Date();
-  const currentHour = now.getHours();
-  const overtimeStartHour = 18; // 6 PM
-  const durationThresholdMs = 12 * 60 * 60 * 1000; // 12 hours
-  const isAfterHours = currentHour >= overtimeStartHour;
-
-  // Helper function to calculate duration from entry time until now
   const calculateDuration = (timeIn) => {
+    const now = new Date();
     if (!timeIn) return 'N/A';
     
     try {
       let inTime;
-      // Handle Firestore Timestamps
       if (timeIn && typeof timeIn.toDate === 'function') {
         inTime = timeIn.toDate();
       } else {
@@ -47,18 +38,21 @@ const OvertimeTable = () => {
     }
   };
 
-  // Filter for users who are "IN" and meet either condition
   const overtimeUsers = useMemo(() => {
     if (!currentStatus) return [];
 
-    const allInUsers = currentStatus.filter(person => person.status === 'IN');
+    const now = new Date();
+    const currentHour = now.getHours();
+    const overtimeStartHour = 18; 
+    const durationThresholdMs = 12 * 60 * 60 * 1000; 
+    const isAfterHours = currentHour >= overtimeStartHour || currentHour < 5;
 
+    const allInUsers = currentStatus.filter(person => person.status === 'IN');
     const flaggedUsers = [];
 
     allInUsers.forEach(person => {
       let lastActionTime;
       try {
-        // Handle Firestore Timestamp
         const timeData = person.last_update || person.last_action_time || person.timestamp;
         if (timeData && typeof timeData.toDate === 'function') {
           lastActionTime = timeData.toDate();
@@ -66,7 +60,7 @@ const OvertimeTable = () => {
           lastActionTime = new Date(timeData);
         }
       } catch (e) {
-        lastActionTime = new Date(); // Failsafe
+        lastActionTime = new Date();
       }
       
       const durationMs = now.getTime() - lastActionTime.getTime();
@@ -85,28 +79,26 @@ const OvertimeTable = () => {
         flaggedUsers.push({
           ...person,
           flagReason: flagReason,
-          entryTime: lastActionTime // for sorting
+          entryTime: lastActionTime
         });
       }
     });
     
-    // Sort by last action time, oldest first (longest duration)
-    return flaggedUsers.sort((a, b) => {
-        return a.entryTime - b.entryTime; 
-    });
+    return flaggedUsers.sort((a, b) => a.entryTime - b.entryTime);
 
-  }, [currentStatus, isAfterHours, now, durationThresholdMs]);
+  }, [currentStatus]);
 
   if (loading) return <LoadingSpinner />;
   if (error) return <ErrorMessage message={error} />;
 
-  const getStatusBadge = (status) => {
-    return (
-      <span className={`status-badge ${status.toLowerCase()}`}>
-        {status}
-      </span>
-    );
-  };
+  const currentHour = new Date().getHours();
+  const isCurrentlyAfterHours = currentHour >= 18 || currentHour < 5;
+
+  const getStatusBadge = (status) => (
+    <span className={`status-badge ${status.toLowerCase()}`}>
+      {status}
+    </span>
+  );
 
   const getUserTypeBadge = (userType) => {
     const type = userType || 'Unknown';
@@ -171,7 +163,7 @@ const OvertimeTable = () => {
               <tr>
                 <td colSpan="7" style={{ textAlign: 'center', padding: '40px' }}>
                   <h4>No Users Flagged</h4>
-                  {isAfterHours ? (
+                  {isCurrentlyAfterHours ? (
                     <p>All users have timed out for the day.</p>
                   ) : (
                     <p>No users have exceeded the 12-hour duration limit.</p>
