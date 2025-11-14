@@ -313,3 +313,36 @@
     gap: 8px;
   }
 }
+
+/* ADD THIS TO THE END of src/components/Dashboard/Dashboard.css */
+
+/* Overtime Notification Bar */
+.overtime-notification {
+  padding: 15px 20px;
+  background: linear-gradient(135deg, #dc3545, #c82333); /* Red warning gradient */
+  color: white;
+  border-radius: 12px;
+  margin-bottom: 25px; /* Space it from the grid below */
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 500;
+  box-shadow: 0 4px 15px rgba(220, 53, 69, 0.4);
+  animation: pulse-red 2.5s infinite;
+}
+
+.overtime-notification strong {
+  font-weight: 700;
+}
+
+/* Keyframe animation for the notification */
+@keyframes pulse-red {
+  0% {
+    box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 12px rgba(220, 53, 69, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+  }
+}

@@ -67,11 +67,67 @@ const Dashboard = () => {
     });
   }, [timeTracking]);
 
+  // --- NEW: Overtime/Over-duration Logic ---
+  const { overtimeUsers, isActivelyMonitoring } = useMemo(() => {
+    const now = new Date();
+    const currentHour = now.getHours();
+    const overtimeStartHour = 18; // 6 PM
+    const durationThresholdMs = 12 * 60 * 60 * 1000; // 12 hours
+    const isAfterHours = currentHour >= overtimeStartHour;
+
+    const allInUsers = uniqueCurrentStatus.filter(person => person.status === 'IN');
+
+    const flaggedUsers = allInUsers.filter(person => {
+      let lastActionTime;
+      try {
+         // Handle Firestore Timestamp
+        if (person.last_update && typeof person.last_update.toDate === 'function') {
+          lastActionTime = person.last_update.toDate();
+        } else if (person.last_action_time && typeof person.last_action_time.toDate === 'function') {
+            lastActionTime = person.last_action_time.toDate();
+        } else if (person.timestamp && typeof person.timestamp.toDate === 'function') {
+            lastActionTime = person.timestamp.toDate();
+        }
+        else {
+          lastActionTime = new Date(person.last_update || person.last_action_time || person.timestamp);
+        }
+      } catch (e) {
+        lastActionTime = new Date(); // Failsafe
+      }
+      
+      // Check duration
+      const durationMs = now.getTime() - lastActionTime.getTime();
+      const isOverDuration = durationMs > durationThresholdMs;
+
+      // Flag if it's after 6 PM OR if they've been in for > 12 hours
+      return isAfterHours || isOverDuration;
+    });
+    
+    // Determine if the notification should be shown
+    const monitoringActive = isAfterHours || flaggedUsers.length > 0;
+
+    return { overtimeUsers: flaggedUsers, isActivelyMonitoring: monitoringActive };
+  }, [uniqueCurrentStatus]);
+  // --- END NEW LOGIC ---
+
   if (studentsLoading || staffLoading || statusLoading || guestsLoading) {
     return <LoadingSpinner />;
   }
 
   const peopleCurrentlyInside = uniqueCurrentStatus.filter(person => person.status === 'IN');
+  
+  // --- Segregated Counts ---
+  const studentsInside = peopleCurrentlyInside.filter(
+    person => person.user_type === 'STUDENT'
+  ).length;
+  const staffInside = peopleCurrentlyInside.filter(
+    person => person.user_type === 'STAFF'
+  ).length;
+  const guestsInside = peopleCurrentlyInside.filter(
+    person => person.user_type === 'GUEST'
+  ).length;
+  // --- End Counts ---
+
   const todayEntries = todayActivity.filter(record => record.action === 'IN').length;
   const todayExits = todayActivity.filter(record => record.action === 'OUT').length;
   const peakHourData = getPeakHour(todayActivity);
@@ -88,6 +144,18 @@ const Dashboard = () => {
           <span>{new Date().toLocaleDateString()}</span>
         </div>
       </div>
+
+      {/* --- NEW: Overtime Notification --- */}
+      {isActivelyMonitoring && overtimeUsers.length > 0 && (
+        <div className="overtime-notification">
+          <span>
+            <strong>Notification:</strong> There {overtimeUsers.length === 1 ? 'is' : 'are'}{' '}
+            <strong>{overtimeUsers.length} user{overtimeUsers.length > 1 ? 's' : ''}</strong>{' '}
+            flagged for overtime. (Inside after 6 PM or 12 hours)
+          </span>
+        </div>
+      )}
+      {/* --- END NEW NOTIFICATION --- */}
 
       {/* Main Statistics Grid */}
       <div className="stats-grid">
@@ -167,6 +235,39 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Current Status by Type */}
+      <div className="card">
+        <div className="card-header">
+          <h2 className="card-title">Current Status by Type</h2>
+        </div>
+        <div className="stats-grid">
+          <div className="stat-card secondary">
+            <div className="stat-icon">👨‍🎓</div>
+            <div className="stat-info">
+              <h3>Students Inside</h3>
+              <span className="stat-number">{studentsInside}</span>
+            </div>
+          </div>
+          
+          <div className="stat-card secondary">
+            <div className="stat-icon">👔</div>
+            <div className="stat-info">
+              <h3>Staff Inside</h3>
+              <span className="stat-number">{staffInside}</span>
+            </div>
+          </div>
+          
+          <div className="stat-card secondary">
+            <div className="stat-icon">🧑‍💼</div>
+            <div className="stat-info">
+              <h3>Visitors Inside</h3>
+              <span className="stat-number">{guestsInside}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
 
       {/* People Currently Inside - Enhanced */}
       {peopleCurrentlyInside.length > 0 && (
@@ -281,7 +382,17 @@ const getPeakHour = (activities) => {
   
   const hourCounts = {};
   activities.forEach(activity => {
-    const hour = new Date(activity.timestamp).getHours();
+    let activityTime;
+    try {
+        if(activity.timestamp && typeof activity.timestamp.toDate === 'function') {
+            activityTime = activity.timestamp.toDate();
+        } else {
+            activityTime = new Date(activity.timestamp);
+        }
+    } catch(e) {
+        activityTime = new Date();
+    }
+    const hour = activityTime.getHours();
     const hourKey = `${hour.toString().padStart(2, '0')}:00`;
     hourCounts[hourKey] = (hourCounts[hourKey] || 0) + 1;
   });

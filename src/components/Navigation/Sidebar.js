@@ -47,6 +47,14 @@ const Sidebar = ({ activeTable, setActiveTable, setUser }) => {
       icon: '⭐',
       type: 'single'
     },
+    // --- NEW BUTTON ADDED HERE ---
+    {
+      key: 'overtime_records',
+      label: 'Overtime Monitoring',
+      icon: '🌙', // Moon icon
+      type: 'single'
+    },
+    // --- END NEW BUTTON ---
     {
       key: 'reports',
       label: 'Reports',

@@ -14,6 +14,9 @@ import { auth } from './config/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import './App.css';
 
+// --- IMPORT NEW COMPONENT ---
+import OvertimeTable from './components/Tables/OvertimeTable';
+
 function App() {
   const [activeTable, setActiveTable] = useState('dashboard');
   const [user, setUser] = useState(null);
@@ -44,6 +47,9 @@ function App() {
         return <CurrentStatusTable />;
       case 'vip_records':
         return <VipRecordsTable />;
+      // --- ADD NEW CASE FOR THE COMPONENT ---
+      case 'overtime_records':
+        return <OvertimeTable />;
       case 'time_reports':
         return <TimeReports />;
       case 'user_reports':
